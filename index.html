@@ -381,31 +381,25 @@
                 console.error('Audio initialization failed:', e);
             }
         }
+        const TONE_GAIN = 0.1;       // Final audible level
+        const GAIN_RAMP_TIME = 0.015; // 15ms smoothing
 
         function playTone() {
             if (!audioContext || !gainNode || !audioReady) return;
-
-            try {
-                const now = audioContext.currentTime;
-                gainNode.gain.cancelScheduledValues(now);
-                gainNode.gain.setValueAtTime(0.0001, now);
-                gainNode.gain.linearRampToValueAtTime(0.1, now + 0.01);  // smoother attack
-            } catch (e) {
-                console.error('Tone play failed:', e);
-            }
+            
+            const now = audioContext.currentTime;
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            gainNode.gain.setTargetAtTime(TONE_GAIN, now, GAIN_RAMP_TIME);
         }
 
         function stopTone() {
             if (!audioContext || !gainNode || !audioReady) return;
 
-            try {
-                const now = audioContext.currentTime;
-                gainNode.gain.cancelScheduledValues(now);
-                gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-                gainNode.gain.linearRampToValueAtTime(0.0001, now + 0.02);  // smoother release
-            } catch (e) {
-                console.error('Tone stop failed:', e);
-            }
+            const now = audioContext.currentTime;
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            gainNode.gain.setTargetAtTime(0.001, now, GAIN_RAMP_TIME);
         }
 
         // Get timing values based on WPM
