@@ -354,9 +354,9 @@
         let filterNode;
         let audioInitialized = false;
         let audioReady = false;
-o
+
         const TONE_GAIN = 0.5;
-        const FLOOR_GAIN = 0.00001;
+        const FLOOR_GAIN = 0.01;
         const ENV_TIME = 0.02; // 20ms envelope smoothing
 
         function initAudio() {
@@ -373,7 +373,7 @@ o
                 // Optional: high-pass filter to reduce low-freq pops/clicks
                 filterNode = audioContext.createBiquadFilter();
                 filterNode.type = "highpass";
-                filterNode.frequency.setValueAtTime(120, audioContext.currentTime); // 120Hz high-pass
+                filterNode.frequency.setValueAtTime(200, audioContext.currentTime); // 120Hz high-pass
                 filterNode.Q.value = 0.707;
 
                 // Connect chain: oscillator → gain → filter → speakers
