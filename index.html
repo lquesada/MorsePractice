@@ -641,24 +641,11 @@
                         (settings.polarity === 'normal' ? '.' : '-') : 
                         (settings.polarity === 'normal' ? '-' : '.');
                     
-                    // If both paddles are now pressed, set up squeeze behavior
-                    if (morseState.leftPressed && morseState.rightPressed) {
-                        // If we have a current element or last element, set up alternating
-                        if (morseState.lastElement) {
-                            const oppositeElement = morseState.lastElement === '.' ? '-' : '.';
-                            if (!morseState.pendingElement && oppositeElement === newElement) {
-                                morseState.pendingElement = oppositeElement;
-                            }
-                        }
-                    }
-                    
-                    // Also handle squeeze during active transmission
-                    if (morseState.isTransmitting) {
-                        const currentElement = morseState.lastElement;
-                        
-                        // If pressing opposite paddle during transmission, remember it for later
-                        if (currentElement !== newElement && !morseState.pendingElement) {
-                            morseState.pendingElement = newElement;
+                    // If both paddles are now pressed AND we're currently transmitting
+                    if (morseState.leftPressed && morseState.rightPressed && morseState.isTransmitting) {
+                        // Queue the opposite of what's currently being sent
+                        if (settings.mode === 'iambic-a' && !morseState.pendingElement) {
+                            morseState.pendingElement = morseState.lastElement === '.' ? '-' : '.';
                         }
                     }
                 }
