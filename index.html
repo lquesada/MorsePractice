@@ -585,15 +585,33 @@
             
             // Determine next element based on paddle states
             let nextElement = '';
-            
+
             if (morseState.leftPressed && morseState.rightPressed) {
                 // Both paddles pressed - squeeze keying
-                // Alternate from the last element sent
-                nextElement = morseState.lastElement === '.' ? '-' : '.';
-                
-                // Set up pending element for the other paddle (always queue the opposite)
-                const oppositeElement = nextElement === '.' ? '-' : '.';
-                morseState.pendingElement = oppositeElement;
+                // For Iambic B: always ensure alternation
+                if (settings.mode === 'iambic-b') {
+                    if (morseState.lastElement === '.') {
+                        nextElement = '-';
+                        morseState.pendingElement = '.';
+                    } else if (morseState.lastElement === '-') {
+                        nextElement = '.';
+                        morseState.pendingElement = '-';
+                    } else {
+                        // First element in squeeze - start with left paddle priority
+                        nextElement = settings.polarity === 'normal' ? '.' : '-';
+                        morseState.pendingElement = settings.polarity === 'normal' ? '-' : '.';
+                    }
+                } else {
+                    // Iambic A - just alternate without guarantee
+                    if (morseState.lastElement === '.') {
+                        nextElement = '-';
+                    } else if (morseState.lastElement === '-') {
+                        nextElement = '.';
+                    } else {
+                        // No previous element - start with left paddle priority
+                        nextElement = settings.polarity === 'normal' ? '.' : '-';
+                    }
+                }
             } else if (morseState.leftPressed) {
                 nextElement = settings.polarity === 'normal' ? '.' : '-';
             } else if (morseState.rightPressed) {
@@ -626,7 +644,6 @@
         // Handle paddle press
         function handlePaddlePress(side, isPressed) {
             const paddle = document.getElementById(side + '-paddle');
-            
             if (isPressed) {
                 paddle.classList.add('pressed');
                 if (side === 'left') {
@@ -635,17 +652,15 @@
                     morseState.rightPressed = true;
                 }
                 
-                // For iambic modes: detect squeeze even before transmission starts
-                if (settings.mode !== 'straight') {
-                    const newElement = (side === 'left') ? 
-                        (settings.polarity === 'normal' ? '.' : '-') : 
-                        (settings.polarity === 'normal' ? '-' : '.');
-                    
-                    // If both paddles are now pressed AND we're currently transmitting
-                    if (morseState.leftPressed && morseState.rightPressed && morseState.isTransmitting) {
-                        // Queue the opposite of what's currently being sent
-                        if (settings.mode === 'iambic-a' && !morseState.pendingElement) {
-                            morseState.pendingElement = morseState.lastElement === '.' ? '-' : '.';
+                // For Iambic B: detect squeeze when second paddle is pressed
+                if (settings.mode === 'iambic-b' && morseState.leftPressed && morseState.rightPressed) {
+                    // Only set pending element if we don't already have one and we're currently transmitting
+                    if (!morseState.pendingElement && morseState.isTransmitting) {
+                        // The currently transmitting element should continue, queue the opposite
+                        if (morseState.lastElement === '.') {
+                            morseState.pendingElement = '-';
+                        } else if (morseState.lastElement === '-') {
+                            morseState.pendingElement = '.';
                         }
                     }
                 }
@@ -667,7 +682,7 @@
                 }
             }
         }
-
+        
         // Setup sliders
         function setupSliders() {
             const wpmSlider = document.getElementById('wpm-slider');
