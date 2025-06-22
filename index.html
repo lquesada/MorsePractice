@@ -746,6 +746,23 @@
                     settings.mode = btn.dataset.mode;
                     saveSettings();
                     
+                    const polarityButtons = document.querySelectorAll('.polarity-btn');
+                    const polarityGroup = polarityButtons[0].closest('.control-group');
+
+                    if (settings.mode === 'straight') {
+                        polarityButtons.forEach(btn => {
+                            btn.style.opacity = '0.5';
+                            btn.style.pointerEvents = 'none';
+                        });
+                        polarityGroup.style.opacity = '0.5';
+                    } else {
+                        polarityButtons.forEach(btn => {
+                            btn.style.opacity = '1';
+                            btn.style.pointerEvents = 'auto';
+                        });
+                        polarityGroup.style.opacity = '1';
+                    }
+
                     // Update button layout
                     if (settings.mode === 'straight') {
                         rightPaddle.style.display = 'none';
@@ -764,6 +781,15 @@
                 if (btn.dataset.mode === settings.mode) {
                     btn.click();
                 }
+
+                // Set initial active state separately, after all event listeners are set
+                polarityButtons.forEach(btn => {
+                    if (btn.dataset.polarity === settings.polarity) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                updatePolarityControls(); // Add this line
             });
             
             polarityButtons.forEach(btn => {
@@ -781,6 +807,25 @@
                     btn.classList.add('active');
                 }
             });
+        }
+
+        function updatePolarityControls() {
+            const polarityButtons = document.querySelectorAll('.polarity-btn');
+            const polarityGroup = polarityButtons[0].closest('.control-group');
+            
+            if (settings.mode === 'straight') {
+                polarityButtons.forEach(btn => {
+                    btn.style.opacity = '0.5';
+                    btn.style.pointerEvents = 'none';
+                });
+                polarityGroup.style.opacity = '0.5';
+            } else {
+                polarityButtons.forEach(btn => {
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'auto';
+                });
+                polarityGroup.style.opacity = '1';
+            }
         }
 
         // Setup event listeners
