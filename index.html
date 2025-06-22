@@ -286,44 +286,59 @@
         let oscillator;
         let gainNode;
 
+
+        let audioInitialized = false;
+        let audioReady = false;
+
         function initAudio() {
+            if (audioInitialized) return;
+            audioInitialized = true;
+
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 gainNode = audioContext.createGain();
                 gainNode.connect(audioContext.destination);
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime); // small floor to avoid clicks
 
                 oscillator = audioContext.createOscillator();
                 oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
                 oscillator.type = 'sine';
                 oscillator.connect(gainNode);
                 oscillator.start();
+
+                const now = audioContext.currentTime;
+                gainNode.gain.setValueAtTime(0.0001, now);
+                gainNode.gain.setValueAtTime(0.0001, now + 0.02);
+
+                setTimeout(() => {
+                    audioReady = true;
+                }, 30);
             } catch (e) {
                 console.error('Audio initialization failed:', e);
             }
         }
 
-        // Play tone
         function playTone() {
-            if (!audioContext || !gainNode) return;
+            if (!audioContext || !gainNode || !audioReady) return;
 
             try {
-                gainNode.gain.cancelScheduledValues(audioContext.currentTime);
-                gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.005);
+                const now = audioContext.currentTime;
+                gainNode.gain.cancelScheduledValues(now);
+                gainNode.gain.setValueAtTime(0.0001, now); // reset from known state
+                gainNode.gain.linearRampToValueAtTime(0.1, now + 0.005);
             } catch (e) {
                 console.error('Tone play failed:', e);
             }
         }
 
-        // Stop tone
         function stopTone() {
-            if (!audioContext || !gainNode) return;
+            if (!audioContext || !gainNode || !audioReady) return;
 
             try {
-                gainNode.gain.cancelScheduledValues(audioContext.currentTime);
-                gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.005);
+                const now = audioContext.currentTime;
+                gainNode.gain.cancelScheduledValues(now);
+                gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+                gainNode.gain.linearRampToValueAtTime(0.0001, now + 0.005);
             } catch (e) {
                 console.error('Tone stop failed:', e);
             }
@@ -783,25 +798,23 @@
             });
         }
 
-        // Initialize application
         function init() {
-            initAudio();
             setupSliders();
             setupModeButtons();
             setupEventListeners();
-            
-            // Enable audio on first user interaction
-            document.addEventListener('click', () => {
-                if (audioContext && audioContext.state === 'suspended') {
+
+            // Ensure audio is initialized on first user gesture
+            const resumeAudio = () => {
+                initAudio();
+                if (audioContext.state === 'suspended') {
                     audioContext.resume();
                 }
-            }, { once: true });
-            
-            document.addEventListener('touchstart', () => {
-                if (audioContext && audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-            }, { once: true });
+                document.removeEventListener('click', resumeAudio);
+                document.removeEventListener('touchstart', resumeAudio);
+            };
+
+            document.addEventListener('click', resumeAudio, { once: true });
+            document.addEventListener('touchstart', resumeAudio, { once: true });
         }
 
         // Start the application
