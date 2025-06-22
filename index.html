@@ -361,36 +361,32 @@
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 gainNode = audioContext.createGain();
+                gainNode.gain.setValueAtTime(0.00001, audioContext.currentTime);  // perceptually silent floor
                 gainNode.connect(audioContext.destination);
-                gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime); // small floor to avoid clicks
 
                 oscillator = audioContext.createOscillator();
-                oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
                 oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
                 oscillator.connect(gainNode);
-                oscillator.start();
+                oscillator.start();  // Oscillator runs continuously
 
-                const now = audioContext.currentTime;
-                gainNode.gain.setValueAtTime(0.0001, now);
-                gainNode.gain.setValueAtTime(0.0001, now + 0.02);
-
-                setTimeout(() => {
-                    audioReady = true;
-                }, 30);
+                audioReady = true;
             } catch (e) {
-                console.error('Audio initialization failed:', e);
+                console.error('Audio init failed:', e);
             }
         }
-        const TONE_GAIN = 0.1;       // Final audible level
-        const GAIN_RAMP_TIME = 0.015; // 15ms smoothing
+   
+        const TONE_GAIN = 0.1;           // Audible level
+        const FLOOR_GAIN = 0.00001;      // Quiet baseline
+        const RAMP_TIME = 0.02;          // In seconds
 
         function playTone() {
             if (!audioContext || !gainNode || !audioReady) return;
-            
+
             const now = audioContext.currentTime;
             gainNode.gain.cancelScheduledValues(now);
             gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            gainNode.gain.setTargetAtTime(TONE_GAIN, now, GAIN_RAMP_TIME);
+            gainNode.gain.exponentialRampToValueAtTime(TONE_GAIN, now + RAMP_TIME);
         }
 
         function stopTone() {
@@ -399,7 +395,7 @@
             const now = audioContext.currentTime;
             gainNode.gain.cancelScheduledValues(now);
             gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            gainNode.gain.setTargetAtTime(0.001, now, GAIN_RAMP_TIME);
+            gainNode.gain.exponentialRampToValueAtTime(FLOOR_GAIN, now + RAMP_TIME);
         }
 
         // Get timing values based on WPM
