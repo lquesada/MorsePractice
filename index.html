@@ -375,27 +375,23 @@
                 console.error('Audio init failed:', e);
             }
         }
-   
-        const TONE_GAIN = 0.7;           // Audible level
-        const FLOOR_GAIN = 0.00005;      // Quiet baseline
-        const RAMP_TIME = 0.01;          // In seconds
+
+        const TONE_GAIN = 0.5;
+        const FLOOR_GAIN = 0.00001;
+        const ENV_TIME = 0.015; // 15 ms
 
         function playTone() {
-            if (!audioContext || !gainNode || !audioReady) return;
-
             const now = audioContext.currentTime;
             gainNode.gain.cancelScheduledValues(now);
             gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            gainNode.gain.exponentialRampToValueAtTime(TONE_GAIN, now + RAMP_TIME);
+            gainNode.gain.setTargetAtTime(TONE_GAIN, now, ENV_TIME);
         }
 
-        function stopTone() {
-            if (!audioContext || !gainNode || !audioReady) return;
-
+            function stopTone() {
             const now = audioContext.currentTime;
             gainNode.gain.cancelScheduledValues(now);
             gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            gainNode.gain.exponentialRampToValueAtTime(FLOOR_GAIN, now + RAMP_TIME);
+            gainNode.gain.setTargetAtTime(FLOOR_GAIN, now, ENV_TIME);
         }
 
         // Get timing values based on WPM
