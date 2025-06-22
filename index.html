@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Morse Code Trainer</title>
     <style>
+        /* Fullscreen overlay styles */
+        #start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #222;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            font-size: 2.5rem;
+            z-index: 9999;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #start-overlay:hover {
+            background: #444;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -187,6 +211,8 @@
     </style>
 </head>
 <body>
+    <div id="start-overlay">Morse Practice<br/><br/>Click to start</div>
+
     <div class="controls">
         <div class="control-group">
             <label>Mode:</label>
@@ -799,6 +825,12 @@
         }
 
         function init() {
+            const startOverlay = document.getElementById('start-overlay');
+            startOverlay.addEventListener('click', () => {
+              initAudio();
+              startOverlay.remove(); // Remove the overlay to reveal main content
+            });
+
             setupSliders();
             setupModeButtons();
             setupEventListeners();
