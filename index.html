@@ -929,12 +929,18 @@
             const startOverlay = document.getElementById('start-overlay');
             
             function closeOverlay() {
-                initAudio();
-                startOverlay.remove(); // Remove the overlay to reveal main content
-                // Remove the keydown listener once overlay is closed
+                if (!audioInitialized) {
+                    initAudio();
+                }
+
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
                 document.removeEventListener('keydown', handleOverlayKeydown);
+                startOverlay.remove();
             }
-            
+
             function handleOverlayKeydown(e) {
                 // Close overlay on any key press
                 e.preventDefault();
@@ -956,19 +962,6 @@
             setupSliders();
             setupModeButtons();
             setupEventListeners();
-
-            // Ensure audio is initialized on first user gesture
-            const resumeAudio = () => {
-                initAudio();
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                document.removeEventListener('click', resumeAudio);
-                document.removeEventListener('touchstart', resumeAudio);
-            };
-
-            document.addEventListener('click', resumeAudio, { once: true });
-            document.addEventListener('touchstart', resumeAudio, { once: true });
         }
 
         // Start the application
