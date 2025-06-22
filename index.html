@@ -219,7 +219,7 @@
             <div class="mode-buttons">
                 <button class="mode-btn" data-mode="straight">Straight</button>
                 <button class="mode-btn" data-mode="iambic-a">Iambic A</button>
-                <button class="mode-btn active" data-mode="iambic-b">Iambic B</button>
+                <button class="mode-btn" data-mode="iambic-b">Iambic B</button>
             </div>
         </div>
         
@@ -246,7 +246,7 @@
         <div class="control-group">
             <label>Polarity:</label>
             <div class="mode-buttons">
-                <button class="polarity-btn active" data-polarity="normal">Normal</button>
+                <button class="polarity-btn" data-polarity="normal">Normal</button>
                 <button class="polarity-btn" data-polarity="inverse">Inverse</button>
             </div>
         </div>
@@ -291,6 +291,7 @@
                 const saved = localStorage.getItem('morseTrainerSettings');
                 if (saved) {
                     const parsed = JSON.parse(saved);
+                    console.log('Loaded settings:', parsed); // Debug line
                     return {
                         mode: parsed.mode || 'iambic-b',
                         wpm: parsed.wpm || 15,
@@ -301,6 +302,7 @@
             } catch (e) {
                 console.log('Could not load settings:', e);
             }
+            console.log('Using default settings'); // Debug line
             return {
                 mode: 'iambic-b',
                 wpm: 15,
@@ -341,26 +343,41 @@
         let audioInitialized = false;
         let audioReady = false;
 
-        function updateToneFrequency() {
-            if (oscillator && audioReady) {
-                try {
-                    oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
-                } catch (e) {
-                    console.error('Failed to update tone frequency:', e);
-                }
+        function initAudio() {
+            if (audioInitialized) return;
+            audioInitialized = true;
+
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                gainNode = audioContext.createGain();
+                gainNode.connect(audioContext.destination);
+                gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime); // small floor to avoid clicks
+
+                oscillator = audioContext.createOscillator();
+                oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
+                oscillator.type = 'sine';
+                oscillator.connect(gainNode);
+                oscillator.start();
+
+                const now = audioContext.currentTime;
+                gainNode.gain.setValueAtTime(0.0001, now);
+                gainNode.gain.setValueAtTime(0.0001, now + 0.02);
+
+                setTimeout(() => {
+                    audioReady = true;
+                }, 30);
+            } catch (e) {
+                console.error('Audio initialization failed:', e);
             }
         }
 
         function playTone() {
-            if (!audioContext || !gainNode || !audioReady) {
-                console.log('Audio not ready for playback');
-                return;
-            }
+            if (!audioContext || !gainNode || !audioReady) return;
 
             try {
                 const now = audioContext.currentTime;
                 gainNode.gain.cancelScheduledValues(now);
-                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.setValueAtTime(0.0001, now); // reset from known state
                 gainNode.gain.linearRampToValueAtTime(0.1, now + 0.005);
             } catch (e) {
                 console.error('Tone play failed:', e);
@@ -374,7 +391,7 @@
                 const now = audioContext.currentTime;
                 gainNode.gain.cancelScheduledValues(now);
                 gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-                gainNode.gain.linearRampToValueAtTime(0, now + 0.005);
+                gainNode.gain.linearRampToValueAtTime(0.0001, now + 0.005);
             } catch (e) {
                 console.error('Tone stop failed:', e);
             }
@@ -699,15 +716,25 @@
             
             updateSlider(toneSlider, toneThumb, toneValue, 400, 1200, settings.tone, (value) => {
                 settings.tone = value;
-                updateToneFrequency();
+                if (oscillator) {
+                    oscillator.frequency.setValueAtTime(value, audioContext.currentTime);
+                }
                 saveSettings();
             });
         }
 
         // Setup mode buttons
         function setupModeButtons() {
+            // Reload settings from storage first
+            settings = loadSettings();
+            
             const modeButtons = document.querySelectorAll('.mode-btn');
             const polarityButtons = document.querySelectorAll('.polarity-btn');
+            
+            // Clear all active states first
+            modeButtons.forEach(b => b.classList.remove('active'));
+            polarityButtons.forEach(b => b.classList.remove('active'));
+          
             const buttonsContainer = document.getElementById('buttons');
             const leftPaddle = document.getElementById('left-paddle');
             const rightPaddle = document.getElementById('right-paddle');
@@ -746,7 +773,10 @@
                     settings.polarity = btn.dataset.polarity;
                     saveSettings();
                 });
-                
+            });
+
+            // Set initial active state separately, after all event listeners are set
+            polarityButtons.forEach(btn => {
                 if (btn.dataset.polarity === settings.polarity) {
                     btn.classList.add('active');
                 }
@@ -838,44 +868,30 @@
         }
 
         function init() {
+            settings = loadSettings();
+
             const startOverlay = document.getElementById('start-overlay');
-            startOverlay.addEventListener('click', async () => {
-                try {
-                    // Create audio context immediately in user gesture
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioContext = new AudioContext({
-                        latencyHint: 'interactive',
-                        sampleRate: 44100
-                    });
-        
-                    // Force resume if suspended
-                    if (audioContext.state === 'suspended') {
-                        await audioContext.resume();
-                    }
-        
-                    // Create audio nodes
-                    gainNode = audioContext.createGain();
-                    gainNode.connect(audioContext.destination);
-                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        
-                    oscillator = audioContext.createOscillator();
-                    oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
-                    oscillator.type = 'sine';
-                    oscillator.connect(gainNode);
-                    oscillator.start();
-        
-                    audioReady = true;
-                    audioInitialized = true;
-                    startOverlay.remove();
-                } catch (e) {
-                    console.error('Audio failed:', e);
-                    startOverlay.remove(); // Still remove overlay even if audio fails
-                }
+            startOverlay.addEventListener('click', () => {
+              initAudio();
+              startOverlay.remove(); // Remove the overlay to reveal main content
             });
 
             setupSliders();
             setupModeButtons();
             setupEventListeners();
+
+            // Ensure audio is initialized on first user gesture
+            const resumeAudio = () => {
+                initAudio();
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                document.removeEventListener('click', resumeAudio);
+                document.removeEventListener('touchstart', resumeAudio);
+            };
+
+            document.addEventListener('click', resumeAudio, { once: true });
+            document.addEventListener('touchstart', resumeAudio, { once: true });
         }
 
         // Start the application
