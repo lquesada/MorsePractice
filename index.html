@@ -285,13 +285,40 @@
             REVERSE_MORSE[MORSE_TABLE[key]] = key;
         });
 
+        // Settings persistence
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('morseTrainerSettings');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    return {
+                        mode: parsed.mode || 'iambic-b',
+                        wpm: parsed.wpm || 15,
+                        tone: parsed.tone || 700,
+                        polarity: parsed.polarity || 'normal'
+                    };
+                }
+            } catch (e) {
+                console.log('Could not load settings:', e);
+            }
+            return {
+                mode: 'iambic-b',
+                wpm: 15,
+                tone: 700,
+                polarity: 'normal'
+            };
+        }
+
+        function saveSettings() {
+            try {
+                localStorage.setItem('morseTrainerSettings', JSON.stringify(settings));
+            } catch (e) {
+                console.log('Could not save settings:', e);
+            }
+        }
+
         // Application state
-        let settings = {
-            mode: 'iambic-b',
-            wpm: 15,
-            tone: 700,
-            polarity: 'normal'
-        };
+        let settings = loadSettings();
 
         let morseState = {
             currentCode: '',
@@ -311,46 +338,83 @@
         let audioContext;
         let oscillator;
         let gainNode;
-
-
         let audioInitialized = false;
         let audioReady = false;
 
         function initAudio() {
-            if (audioInitialized) return;
+            if (audioInitialized) return Promise.resolve();
             audioInitialized = true;
 
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                gainNode = audioContext.createGain();
-                gainNode.connect(audioContext.destination);
-                gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime); // small floor to avoid clicks
+            return new Promise((resolve, reject) => {
+                try {
+                    // Create audio context with better options for mobile
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContext({
+                        latencyHint: 'interactive',
+                        sampleRate: 44100
+                    });
 
-                oscillator = audioContext.createOscillator();
-                oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
-                oscillator.type = 'sine';
-                oscillator.connect(gainNode);
-                oscillator.start();
+                    // Force audio context to resume (critical for mobile)
+                    const resumeContext = () => {
+                        if (audioContext.state === 'suspended') {
+                            return audioContext.resume();
+                        }
+                        return Promise.resolve();
+                    };
 
-                const now = audioContext.currentTime;
-                gainNode.gain.setValueAtTime(0.0001, now);
-                gainNode.gain.setValueAtTime(0.0001, now + 0.02);
+                    resumeContext().then(() => {
+                        // Create gain node
+                        gainNode = audioContext.createGain();
+                        gainNode.connect(audioContext.destination);
+                        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
 
-                setTimeout(() => {
-                    audioReady = true;
-                }, 30);
-            } catch (e) {
-                console.error('Audio initialization failed:', e);
+                        // Create oscillator
+                        oscillator = audioContext.createOscillator();
+                        oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
+                        oscillator.type = 'sine';
+                        oscillator.connect(gainNode);
+                        oscillator.start();
+
+                        // Test audio by playing a very brief, quiet tone
+                        const testTime = audioContext.currentTime;
+                        gainNode.gain.setValueAtTime(0, testTime);
+                        gainNode.gain.setValueAtTime(0.01, testTime + 0.01);
+                        gainNode.gain.setValueAtTime(0, testTime + 0.02);
+
+                        // Wait a bit for everything to settle
+                        setTimeout(() => {
+                            audioReady = true;
+                            console.log('Audio initialized successfully');
+                            resolve();
+                        }, 100);
+                    }).catch(reject);
+                } catch (e) {
+                    console.error('Audio initialization failed:', e);
+                    reject(e);
+                }
+            });
+        }
+
+        function updateToneFrequency() {
+            if (oscillator && audioReady) {
+                try {
+                    oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
+                } catch (e) {
+                    console.error('Failed to update tone frequency:', e);
+                }
             }
         }
 
         function playTone() {
-            if (!audioContext || !gainNode || !audioReady) return;
+            if (!audioContext || !gainNode || !audioReady) {
+                console.log('Audio not ready for playback');
+                return;
+            }
 
             try {
                 const now = audioContext.currentTime;
                 gainNode.gain.cancelScheduledValues(now);
-                gainNode.gain.setValueAtTime(0.0001, now); // reset from known state
+                gainNode.gain.setValueAtTime(0, now);
                 gainNode.gain.linearRampToValueAtTime(0.1, now + 0.005);
             } catch (e) {
                 console.error('Tone play failed:', e);
@@ -364,7 +428,7 @@
                 const now = audioContext.currentTime;
                 gainNode.gain.cancelScheduledValues(now);
                 gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-                gainNode.gain.linearRampToValueAtTime(0.0001, now + 0.005);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.005);
             } catch (e) {
                 console.error('Tone stop failed:', e);
             }
@@ -684,12 +748,13 @@
             
             updateSlider(wpmSlider, wpmThumb, wpmValue, 5, 60, settings.wpm, (value) => {
                 settings.wpm = value;
-                // Remove localStorage usage
+                saveSettings();
             });
             
             updateSlider(toneSlider, toneThumb, toneValue, 400, 1200, settings.tone, (value) => {
                 settings.tone = value;
-                // Remove localStorage usage
+                updateToneFrequency();
+                saveSettings();
             });
         }
 
@@ -706,6 +771,7 @@
                     modeButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     settings.mode = btn.dataset.mode;
+                    saveSettings();
                     
                     // Update button layout
                     if (settings.mode === 'straight') {
@@ -732,6 +798,7 @@
                     polarityButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     settings.polarity = btn.dataset.polarity;
+                    saveSettings();
                 });
                 
                 if (btn.dataset.polarity === settings.polarity) {
