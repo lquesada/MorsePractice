@@ -286,13 +286,18 @@
         let oscillator;
         let gainNode;
 
-        // Initialize audio
         function initAudio() {
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 gainNode = audioContext.createGain();
                 gainNode.connect(audioContext.destination);
                 gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+
+                oscillator = audioContext.createOscillator();
+                oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
+                oscillator.type = 'sine';
+                oscillator.connect(gainNode);
+                oscillator.start();
             } catch (e) {
                 console.error('Audio initialization failed:', e);
             }
@@ -300,23 +305,12 @@
 
         // Play tone
         function playTone() {
-            if (!audioContext) return;
-            
+            if (!audioContext || !gainNode) return;
+
             try {
-                if (oscillator) {
-                    oscillator.stop();
-                }
-                
-                oscillator = audioContext.createOscillator();
-                oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
-                oscillator.type = 'sine';
-                oscillator.connect(gainNode);
-                
-                // Smooth ramp up
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.cancelScheduledValues(audioContext.currentTime);
+                gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
                 gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.005);
-                
-                oscillator.start();
             } catch (e) {
                 console.error('Tone play failed:', e);
             }
@@ -324,15 +318,14 @@
 
         // Stop tone
         function stopTone() {
-            if (oscillator && audioContext) {
-                try {
-                    // Smooth ramp down
-                    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.005);
-                    oscillator.stop(audioContext.currentTime + 0.01);
-                    oscillator = null;
-                } catch (e) {
-                    console.error('Tone stop failed:', e);
-                }
+            if (!audioContext || !gainNode) return;
+
+            try {
+                gainNode.gain.cancelScheduledValues(audioContext.currentTime);
+                gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.005);
+            } catch (e) {
+                console.error('Tone stop failed:', e);
             }
         }
 
