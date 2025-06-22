@@ -15,6 +15,7 @@
             background: #222;
             color: #fff;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             font-family: Arial, sans-serif;
@@ -23,10 +24,6 @@
             z-index: 9999;
             cursor: pointer;
             user-select: none;
-        }
-
-        #start-overlay:hover {
-            background: #444;
         }
 
         * {
@@ -175,13 +172,25 @@
             background: #007acc !important;
         }
 
+        .openline {
+            display: block;
+            font-size: 70px;
+            color: #ddaa55;
+            padding: 20px;
+        }
+
+        .credit {
+            display: block;
+            padding: 50px;
+            font-size: 14px;
+        }
+
         .credit a:link,
         .credit a:visited,
         .credit a:hover,
         .credit a:active {
-          color: #dddddd;
+          color: #9999ff;
           font-weight: bold;
-          text-decoration: none; /* optional */
         }
 
         @media (max-width: 768px) {
@@ -211,11 +220,17 @@
     </style>
 </head>
 <body>
-    <div id="start-overlay">Morse Practice<br/><br/>Click to start</div>
+    <div id="start-overlay">
+        <div class="openline">Morse Practice</div>
+        <div class="openline">Click to start</div>
+        <div class="credit" id="credit">
+            Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
+        </div>
+    </div>
 
     <div class="controls">
         <div class="control-group">
-            <label>Mode:</label>
+            <label>Key type:</label>
             <div class="mode-buttons">
                 <button class="mode-btn" data-mode="straight">Straight</button>
                 <button class="mode-btn" data-mode="iambic-a">Iambic A</button>
@@ -249,10 +264,6 @@
                 <button class="polarity-btn" data-polarity="normal">Normal</button>
                 <button class="polarity-btn" data-polarity="inverse">Inverse</button>
             </div>
-        </div>
-
-        <div class="credit" id="credit">
-            <a href="https://www.luisquesada.com">Luis Quesada / HB9IPH, 2025</a>
         </div>
     </div>
     
@@ -916,9 +927,30 @@
             settings = loadSettings();
 
             const startOverlay = document.getElementById('start-overlay');
-            startOverlay.addEventListener('click', () => {
-              initAudio();
-              startOverlay.remove(); // Remove the overlay to reveal main content
+            
+            function closeOverlay() {
+                initAudio();
+                startOverlay.remove(); // Remove the overlay to reveal main content
+                // Remove the keydown listener once overlay is closed
+                document.removeEventListener('keydown', handleOverlayKeydown);
+            }
+            
+            function handleOverlayKeydown(e) {
+                // Close overlay on any key press
+                e.preventDefault();
+                e.stopImmediatePropagation();  // <-- This line stops the event from reaching other listeners
+                closeOverlay();
+            }
+            
+            startOverlay.addEventListener('click', closeOverlay);
+            
+            // Add keydown listener for overlay
+            document.addEventListener('keydown', handleOverlayKeydown);
+
+            // Prevent link clicks from triggering overlay removal
+            const creditLink = document.querySelector('#credit a');
+            creditLink.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
 
             setupSliders();
