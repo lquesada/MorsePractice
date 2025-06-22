@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Morse Code Trainer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+        }
+
+        .controls {
+            padding: 10px;
+            background: #2a2a2a;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .mode-btn, .polarity-btn {
+            padding: 8px 16px;
+            border: 2px solid #555;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active, .polarity-btn.active {
+            background: #007acc;
+            border-color: #007acc;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider {
+            width: 100px;
+            height: 25px;
+            background: #555;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .slider-thumb {
+            width: 20px;
+            height: 20px;
+            background: #007acc;
+            border-radius: 50%;
+            position: absolute;
+            top: 2.5px;
+            transition: left 0.1s;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .output {
+            flex: 1;
+            padding: 20px;
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 32px;
+            line-height: 1.6;
+            overflow-y: auto;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .buttons {
+            height: 200px;
+            display: flex;
+            background: #2a2a2a;
+        }
+
+        .paddle {
+            flex: 1;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+            transition: background-color 0.05s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .paddle.left {
+            background: #444;
+            border-right: 2px solid #666;
+        }
+
+        .paddle.right {
+            background: #555;
+        }
+
+        .paddle.single {
+            background: #444;
+            border-right: none;
+        }
+
+        .paddle:active, .paddle.pressed {
+            background: #007acc !important;
+        }
+
+        .credit a:link,
+        .credit a:visited,
+        .credit a:hover,
+        .credit a:active {
+          color: #dddddd;
+          font-weight: bold;
+          text-decoration: none; /* optional */
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                padding: 8px;
+                min-height: 70px;
+            }
+            
+            .control-group label {
+                font-size: 12px;
+            }
+            
+            .mode-btn, .polarity-btn {
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+            
+            .output {
+                font-size: 28px;
+                padding: 15px;
+            }
+            
+            .buttons {
+                height: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div class="control-group">
+            <label>Mode:</label>
+            <div class="mode-buttons">
+                <button class="mode-btn" data-mode="straight">Straight</button>
+                <button class="mode-btn" data-mode="iambic-a">Iambic A</button>
+                <button class="mode-btn active" data-mode="iambic-b">Iambic B</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>WPM:</label>
+            <div class="slider-container">
+                <div class="slider" id="wpm-slider">
+                    <div class="slider-thumb"></div>
+                </div>
+                <div class="slider-value" id="wpm-value">15</div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Tone:</label>
+            <div class="slider-container">
+                <div class="slider" id="tone-slider">
+                    <div class="slider-thumb"></div>
+                </div>
+                <div class="slider-value" id="tone-value">700</div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Polarity:</label>
+            <div class="mode-buttons">
+                <button class="polarity-btn active" data-polarity="normal">Normal</button>
+                <button class="polarity-btn" data-polarity="inverse">Inverse</button>
+            </div>
+        </div>
+
+        <div class="credit" id="credit">
+            <a href="https://www.luisquesada.com">Luis Quesada / HB9IPH, 2025</a>
+        </div>
+    </div>
+    
+    <div class="output" id="output"></div>
+    
+    <div class="buttons" id="buttons">
+        <button class="paddle left" id="left-paddle">tap or [ or A or left arrow</button>
+        <button class="paddle right" id="right-paddle">tap or ] or D or right arrow</button>
+    </div>
+
+    <script>
+        // Morse code table
+        const MORSE_TABLE = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+            'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+            'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+            'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..',
+
+            '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-',
+            '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.',
+
+            '?': '..--..', '!': '-.-.--', '.': '.-.-.-', ':': '---...', ';': '-.-.-.',
+            '=': '-...-', '/': '-..-.', '@': '.--.-.', "'": '.----.', '-': '-....-',
+            ',': '--..--', '"': '.-..-.', '+': '.-.-.', ' ': ' '
+        };
+
+        const REVERSE_MORSE = {};
+        Object.keys(MORSE_TABLE).forEach(key => {
+            REVERSE_MORSE[MORSE_TABLE[key]] = key;
+        });
+
+        // Application state
+        let settings = {
+            mode: 'iambic-b',
+            wpm: 15,
+            tone: 700,
+            polarity: 'normal'
+        };
+
+        let morseState = {
+            currentCode: '',
+            lastElementTime: 0,
+            isTransmitting: false,
+            leftPressed: false,
+            rightPressed: false,
+            lastElement: '',
+            pendingElement: '',
+            elementQueue: [],
+            letterTimeout: null,
+            wordTimeout: null,
+            elementStartTime: 0
+        };
+
+        // Audio context and oscillator
+        let audioContext;
+        let oscillator;
+        let gainNode;
+
+        // Initialize audio
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                gainNode = audioContext.createGain();
+                gainNode.connect(audioContext.destination);
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            } catch (e) {
+                console.error('Audio initialization failed:', e);
+            }
+        }
+
+        // Play tone
+        function playTone() {
+            if (!audioContext) return;
+            
+            try {
+                if (oscillator) {
+                    oscillator.stop();
+                }
+                
+                oscillator = audioContext.createOscillator();
+                oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
+                oscillator.type = 'sine';
+                oscillator.connect(gainNode);
+                
+                // Smooth ramp up
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.005);
+                
+                oscillator.start();
+            } catch (e) {
+                console.error('Tone play failed:', e);
+            }
+        }
+
+        // Stop tone
+        function stopTone() {
+            if (oscillator && audioContext) {
+                try {
+                    // Smooth ramp down
+                    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.005);
+                    oscillator.stop(audioContext.currentTime + 0.01);
+                    oscillator = null;
+                } catch (e) {
+                    console.error('Tone stop failed:', e);
+                }
+            }
+        }
+
+        // Get timing values based on WPM
+        function getTimings() {
+            const ditLength = 1200 / settings.wpm; // milliseconds
+            return {
+                dit: ditLength,
+                dah: ditLength * 3,
+                elementGap: ditLength,
+                letterGap: ditLength * 3,
+                wordGap: ditLength * 7
+            };
+        }
+
+        // Output text to display
+        function outputText(text) {
+            const output = document.getElementById('output');
+            output.textContent += text;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Process morse code and reset state
+        function processMorseCode(code) {
+            if (code === '') return;
+            
+            const char = REVERSE_MORSE[code];
+            if (char !== undefined) {
+                outputText(char);
+            } else {
+                outputText('[?]');
+            }
+            
+            // Reset the current code after processing
+            morseState.currentCode = '';
+            morseState.lastElementTime = Date.now();
+        }
+
+        // Clear existing timeouts
+        function clearTimingTimeouts() {
+            if (morseState.letterTimeout) {
+                clearTimeout(morseState.letterTimeout);
+                morseState.letterTimeout = null;
+            }
+            if (morseState.wordTimeout) {
+                clearTimeout(morseState.wordTimeout);
+                morseState.wordTimeout = null;
+            }
+        }
+
+        // Set up letter/word detection timeouts
+        function setupLetterWordTimeouts() {
+            clearTimingTimeouts();
+            const timings = getTimings();
+            const now = Date.now();
+            
+            // Letter timeout (shorter)
+            morseState.letterTimeout = setTimeout(() => {
+                if (morseState.currentCode && !morseState.isTransmitting) {
+                    processMorseCode(morseState.currentCode);
+                    // After processing letter, set up word timeout
+                    morseState.wordTimeout = setTimeout(() => {
+                        if (!morseState.isTransmitting && !morseState.currentCode) {
+                            outputText(' ');
+                        }
+                    }, timings.wordGap - timings.letterGap);
+                }
+            }, timings.letterGap);
+        }
+
+        // Handle element timing for straight key
+        function handleStraightKey(isPressed) {
+            const now = Date.now();
+            const timings = getTimings();
+            
+            if (isPressed) {
+                // Clear any pending timeouts when new transmission starts
+                clearTimingTimeouts();
+                
+                if (!morseState.isTransmitting) {
+                    morseState.isTransmitting = true;
+                    morseState.lastElementTime = now;
+                    playTone();
+                }
+            } else {
+                if (morseState.isTransmitting) {
+                    morseState.isTransmitting = false;
+                    stopTone();
+                    
+                    const duration = now - morseState.lastElementTime;
+                    const element = duration < (timings.dit + timings.dah) / 2 ? '.' : '-';
+                    morseState.currentCode += element;
+                    morseState.lastElementTime = now;
+                    
+                    // Set up timeouts for letter/word detection
+                    setupLetterWordTimeouts();
+                }
+            }
+        }
+
+        // Handle iambic keyer - fixed version
+        function handleIambic() {
+            const timings = getTimings();
+            
+            // Don't interrupt current transmission - let it complete
+            if (morseState.isTransmitting) {
+                return;
+            }
+            
+            // Clear timeouts when starting new transmission
+            if (morseState.leftPressed || morseState.rightPressed || morseState.pendingElement) {
+                clearTimingTimeouts();
+            }
+            
+            // Check if we need to wait for proper inter-element spacing
+            const now = Date.now();
+            const timeSinceLastElement = now - morseState.lastElementTime;
+            
+            if (morseState.currentCode && timeSinceLastElement < timings.elementGap) {
+                // Wait for proper inter-element spacing before continuing
+                const remainingGap = timings.elementGap - timeSinceLastElement;
+                setTimeout(() => {
+                    handleIambic();
+                }, remainingGap);
+                return;
+            }
+            
+            // Handle pending element from squeeze
+            if (morseState.pendingElement) {
+                const element = morseState.pendingElement;
+                morseState.pendingElement = '';
+                
+                // Send the pending element
+                morseState.isTransmitting = true;
+                morseState.lastElement = element;
+                morseState.elementStartTime = Date.now();
+                playTone();
+                
+                const duration = element === '.' ? timings.dit : timings.dah;
+                
+                setTimeout(() => {
+                    stopTone();
+                    morseState.isTransmitting = false;
+                    morseState.currentCode += element;
+                    morseState.lastElementTime = Date.now();
+                    
+                    // Always wait for proper element gap before continuing
+                    setTimeout(() => {
+                        handleIambic();
+                    }, timings.elementGap);
+                }, duration);
+                
+                return;
+            }
+            
+            // No paddles pressed and no pending elements
+            if (!morseState.leftPressed && !morseState.rightPressed) {
+                // Set up letter/word timeouts if we have code
+                if (morseState.currentCode) {
+                    setupLetterWordTimeouts();
+                }
+                return;
+            }
+            
+            // Determine next element based on paddle states
+            let nextElement = '';
+            
+            if (morseState.leftPressed && morseState.rightPressed) {
+                // Both paddles pressed - squeeze keying
+                // Alternate from the last element sent
+                nextElement = morseState.lastElement === '.' ? '-' : '.';
+                
+                // Set up pending element for the other paddle (always queue the opposite)
+                const oppositeElement = nextElement === '.' ? '-' : '.';
+                morseState.pendingElement = oppositeElement;
+            } else if (morseState.leftPressed) {
+                nextElement = settings.polarity === 'normal' ? '.' : '-';
+            } else if (morseState.rightPressed) {
+                nextElement = settings.polarity === 'normal' ? '-' : '.';
+            }
+            
+            if (nextElement) {
+                morseState.isTransmitting = true;
+                morseState.lastElement = nextElement;
+                morseState.elementStartTime = Date.now();
+                playTone();
+                
+                const duration = nextElement === '.' ? timings.dit : timings.dah;
+                
+                // Always complete the full element duration
+                setTimeout(() => {
+                    stopTone();
+                    morseState.isTransmitting = false;
+                    morseState.currentCode += nextElement;
+                    morseState.lastElementTime = Date.now();
+                    
+                    // Always wait for proper element gap before continuing
+                    setTimeout(() => {
+                        handleIambic();
+                    }, timings.elementGap);
+                }, duration);
+            }
+        }
+
+        // Handle paddle press
+        function handlePaddlePress(side, isPressed) {
+            const paddle = document.getElementById(side + '-paddle');
+            
+            if (isPressed) {
+                paddle.classList.add('pressed');
+                if (side === 'left') {
+                    morseState.leftPressed = true;
+                } else {
+                    morseState.rightPressed = true;
+                }
+                
+                // For iambic modes: detect squeeze even before transmission starts
+                if (settings.mode !== 'straight') {
+                    const newElement = (side === 'left') ? 
+                        (settings.polarity === 'normal' ? '.' : '-') : 
+                        (settings.polarity === 'normal' ? '-' : '.');
+                    
+                    // If both paddles are now pressed, set up squeeze behavior
+                    if (morseState.leftPressed && morseState.rightPressed) {
+                        // If we have a current element or last element, set up alternating
+                        if (morseState.lastElement) {
+                            const oppositeElement = morseState.lastElement === '.' ? '-' : '.';
+                            if (!morseState.pendingElement && oppositeElement === newElement) {
+                                morseState.pendingElement = oppositeElement;
+                            }
+                        }
+                    }
+                    
+                    // Also handle squeeze during active transmission
+                    if (morseState.isTransmitting) {
+                        const currentElement = morseState.lastElement;
+                        
+                        // If pressing opposite paddle during transmission, remember it for later
+                        if (currentElement !== newElement && !morseState.pendingElement) {
+                            morseState.pendingElement = newElement;
+                        }
+                    }
+                }
+            } else {
+                paddle.classList.remove('pressed');
+                if (side === 'left') {
+                    morseState.leftPressed = false;
+                } else {
+                    morseState.rightPressed = false;
+                }
+            }
+            
+            if (settings.mode === 'straight') {
+                handleStraightKey(isPressed && side === 'left');
+            } else {
+                // For iambic modes, start transmission when paddle pressed
+                if (isPressed && !morseState.isTransmitting) {
+                    handleIambic();
+                }
+            }
+        }
+
+        // Setup sliders
+        function setupSliders() {
+            const wpmSlider = document.getElementById('wpm-slider');
+            const wpmThumb = wpmSlider.querySelector('.slider-thumb');
+            const wpmValue = document.getElementById('wpm-value');
+            
+            const toneSlider = document.getElementById('tone-slider');
+            const toneThumb = toneSlider.querySelector('.slider-thumb');
+            const toneValue = document.getElementById('tone-value');
+            
+            function updateSlider(slider, thumb, value, min, max, current, callback) {
+                const percent = (current - min) / (max - min);
+                thumb.style.left = (percent * 80) + 'px';
+                value.textContent = current;
+                
+                let isDragging = false;
+                
+                function handleMove(clientX) {
+                    const rect = slider.getBoundingClientRect();
+                    const x = clientX - rect.left;
+                    const percent = Math.max(0, Math.min(1, x / rect.width));
+                    const newValue = Math.round(min + percent * (max - min));
+                    
+                    thumb.style.left = (percent * 80) + 'px';
+                    value.textContent = newValue;
+                    callback(newValue);
+                }
+                
+                slider.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    handleMove(e.clientX);
+                });
+                
+                slider.addEventListener('touchstart', (e) => {
+                    isDragging = true;
+                    handleMove(e.touches[0].clientX);
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging) handleMove(e.clientX);
+                });
+                
+                document.addEventListener('touchmove', (e) => {
+                    if (isDragging) {
+                        e.preventDefault();
+                        handleMove(e.touches[0].clientX);
+                    }
+                });
+                
+                document.addEventListener('mouseup', () => isDragging = false);
+                document.addEventListener('touchend', () => isDragging = false);
+            }
+            
+            updateSlider(wpmSlider, wpmThumb, wpmValue, 5, 60, settings.wpm, (value) => {
+                settings.wpm = value;
+                // Remove localStorage usage
+            });
+            
+            updateSlider(toneSlider, toneThumb, toneValue, 400, 1200, settings.tone, (value) => {
+                settings.tone = value;
+                // Remove localStorage usage
+            });
+        }
+
+        // Setup mode buttons
+        function setupModeButtons() {
+            const modeButtons = document.querySelectorAll('.mode-btn');
+            const polarityButtons = document.querySelectorAll('.polarity-btn');
+            const buttonsContainer = document.getElementById('buttons');
+            const leftPaddle = document.getElementById('left-paddle');
+            const rightPaddle = document.getElementById('right-paddle');
+            
+            modeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modeButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    settings.mode = btn.dataset.mode;
+                    
+                    // Update button layout
+                    if (settings.mode === 'straight') {
+                        rightPaddle.style.display = 'none';
+                        leftPaddle.classList.remove('left');
+                        leftPaddle.classList.add('single');
+                        leftPaddle.textContent = 'tap or [ or A or left arrow';
+                    } else {
+                        rightPaddle.style.display = 'flex';
+                        leftPaddle.classList.remove('single');
+                        leftPaddle.classList.add('left');
+                        leftPaddle.textContent = 'tap or [ or A or left arrow';
+                        rightPaddle.textContent = 'tap or ] or D or right arrow';
+                    }
+                });
+                
+                if (btn.dataset.mode === settings.mode) {
+                    btn.click();
+                }
+            });
+            
+            polarityButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    polarityButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    settings.polarity = btn.dataset.polarity;
+                });
+                
+                if (btn.dataset.polarity === settings.polarity) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            const leftPaddle = document.getElementById('left-paddle');
+            const rightPaddle = document.getElementById('right-paddle');
+            
+            // Mouse events
+            leftPaddle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                handlePaddlePress('left', true);
+            });
+            
+            rightPaddle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                handlePaddlePress('right', true);
+            });
+            
+            document.addEventListener('mouseup', () => {
+                handlePaddlePress('left', false);
+                handlePaddlePress('right', false);
+            });
+            
+            // Touch events
+            leftPaddle.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handlePaddlePress('left', true);
+            });
+            
+            rightPaddle.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handlePaddlePress('right', true);
+            });
+            
+            document.addEventListener('touchend', (e) => {
+                handlePaddlePress('left', false);
+                handlePaddlePress('right', false);
+            });
+            
+            // Keyboard events
+            document.addEventListener('keydown', (e) => {
+                if (e.repeat) return;
+                
+                switch (e.key) {
+                    case '[':
+                    case 'a':
+                    case 'A':
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        handlePaddlePress('left', true);
+                        break;
+                    case ']':
+                    case 'd':
+                    case 'D':
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        handlePaddlePress('right', true);
+                        break;
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                switch (e.key) {
+                    case '[':
+                    case 'a':
+                    case 'A':
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        handlePaddlePress('left', false);
+                        break;
+                    case ']':
+                    case 'd':
+                    case 'D':
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        handlePaddlePress('right', false);
+                        break;
+                }
+            });
+        }
+
+        // Initialize application
+        function init() {
+            initAudio();
+            setupSliders();
+            setupModeButtons();
+            setupEventListeners();
+            
+            // Enable audio on first user interaction
+            document.addEventListener('click', () => {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }, { once: true });
+            
+            document.addEventListener('touchstart', () => {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }, { once: true });
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
