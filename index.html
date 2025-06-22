@@ -388,8 +388,8 @@
             try {
                 const now = audioContext.currentTime;
                 gainNode.gain.cancelScheduledValues(now);
-                gainNode.gain.setValueAtTime(0.0001, now); // reset from known state
-                gainNode.gain.linearRampToValueAtTime(0.1, now + 0.005);
+                gainNode.gain.setValueAtTime(0.0001, now);
+                gainNode.gain.linearRampToValueAtTime(0.1, now + 0.01);  // smoother attack
             } catch (e) {
                 console.error('Tone play failed:', e);
             }
@@ -402,7 +402,7 @@
                 const now = audioContext.currentTime;
                 gainNode.gain.cancelScheduledValues(now);
                 gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-                gainNode.gain.linearRampToValueAtTime(0.0001, now + 0.005);
+                gainNode.gain.linearRampToValueAtTime(0.0001, now + 0.02);  // smoother release
             } catch (e) {
                 console.error('Tone stop failed:', e);
             }
