@@ -730,11 +730,16 @@
                 e.preventDefault();
                 handlePaddlePress('right', true);
             });
-            
-            document.addEventListener('touchend', (e) => {
+
+            leftPaddle.addEventListener('touchend', (e) => {
+                e.preventDefault();
                 handlePaddlePress('left', false);
+            }, { passive: false });
+
+            rightPaddle.addEventListener('touchend', (e) => {
+                e.preventDefault();
                 handlePaddlePress('right', false);
-            });
+            }, { passive: false });
             
             // Keyboard events
             document.addEventListener('keydown', (e) => {
