@@ -354,39 +354,40 @@
         let filterNode;
         let audioInitialized = false;
         let audioReady = false;
-
         const TONE_GAIN = 0.5;
-        const FLOOR_GAIN = 0.00001;
-        const ENV_TIME = 0.015;
+        const FLOOR_GAIN = 0.001; // Increased from 0.00001 - safer for exponential ramps
+        const ENV_TIME = 0.05; // Increased from 0.015 - longer envelope for Android
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const ENV_TIME_MOBILE = 0.08; // Even longer for mobile devices
 
         function initAudio() {
             if (audioInitialized) return;
             audioInitialized = true;
-
+            
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-                // Gain node with quiet floor
+                
+                // Gain node with safer floor value
                 gainNode = audioContext.createGain();
                 gainNode.gain.setValueAtTime(FLOOR_GAIN, audioContext.currentTime);
-
+                
                 // Optional: high-pass filter to reduce low-freq pops/clicks
                 filterNode = audioContext.createBiquadFilter();
                 filterNode.type = "highpass";
-                filterNode.frequency.setValueAtTime(120, audioContext.currentTime); // 120Hz high-pass
+                filterNode.frequency.setValueAtTime(120, audioContext.currentTime);
                 filterNode.Q.value = 0.707;
-
+                
                 // Connect chain: oscillator → gain → filter → speakers
                 gainNode.connect(filterNode);
                 filterNode.connect(audioContext.destination);
-
+                
                 // Start persistent oscillator
                 oscillator = audioContext.createOscillator();
                 oscillator.type = "sine";
                 oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
                 oscillator.connect(gainNode);
                 oscillator.start();
-
+                
                 audioReady = true;
             } catch (e) {
                 console.error("Audio init failed:", e);
@@ -395,20 +396,66 @@
 
         function playTone() {
             if (!audioContext || !gainNode || !audioReady) return;
-
+            
             const now = audioContext.currentTime;
+            const envTime = isMobile ? ENV_TIME_MOBILE : ENV_TIME;
+            
+            // Cancel any scheduled changes
             gainNode.gain.cancelScheduledValues(now);
-            gainNode.gain.setValueAtTime(gainNode.gain.value, now); // prevent jump
-            gainNode.gain.exponentialRampToValueAtTime(TONE_GAIN, now + ENV_TIME);
+            
+            // Set current value explicitly to prevent jumps
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            
+            // Use linear ramp for more predictable behavior on mobile
+            if (isMobile) {
+                gainNode.gain.linearRampToValueAtTime(TONE_GAIN, now + envTime);
+            } else {
+                gainNode.gain.exponentialRampToValueAtTime(TONE_GAIN, now + envTime);
+            }
         }
 
         function stopTone() {
             if (!audioContext || !gainNode || !audioReady) return;
-
+            
             const now = audioContext.currentTime;
+            const envTime = isMobile ? ENV_TIME_MOBILE : ENV_TIME;
+            
+            // Cancel any scheduled changes
+            gainNode.gain.cancelScheduledValues(now);
+            
+            // Set current value explicitly to prevent jumps
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            
+            // Use linear ramp for more predictable behavior on mobile
+            if (isMobile) {
+                gainNode.gain.linearRampToValueAtTime(FLOOR_GAIN, now + envTime);
+            } else {
+                gainNode.gain.exponentialRampToValueAtTime(FLOOR_GAIN, now + envTime);
+            }
+        }
+
+        // Alternative approach using setTargetAtTime (often smoother on mobile)
+        function playToneAlternative() {
+            if (!audioContext || !gainNode || !audioReady) return;
+            
+            const now = audioContext.currentTime;
+            
             gainNode.gain.cancelScheduledValues(now);
             gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            gainNode.gain.exponentialRampToValueAtTime(FLOOR_GAIN, now + ENV_TIME);
+            
+            // setTargetAtTime creates a smooth exponential approach
+            // timeConstant of 0.015 means it reaches ~63% of target in 15ms
+            gainNode.gain.setTargetAtTime(TONE_GAIN, now, 0.015);
+        }
+
+        function stopToneAlternative() {
+            if (!audioContext || !gainNode || !audioReady) return;
+            
+            const now = audioContext.currentTime;
+            
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            gainNode.gain.setTargetAtTime(FLOOR_GAIN, now, 0.015);
         }
 
         // Get timing values based on WPM
