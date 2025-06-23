@@ -358,7 +358,7 @@
             }
             console.log('Using default settings'); // Debug line
             return {
-                mode: 'iambic-b',
+                mode: 'iambic-a',
                 wpm: 15,
                 vol: 40,
                 tone: 700,
@@ -603,8 +603,8 @@
                 // Iambic B: check if pressed during element OR currently pressed
                 squeezeActive = paddleState.squeezeCurrentlyPressed || paddleState.squeezePressedDuringElement;
             }
-            leftActive = paddleState.leftCurrentlyPressed || paddleState.leftCurrentlyPressed;
-            rightActive = paddleState.rightCurrentlyPressed || paddleState.rightCurrentlyPressed;
+            leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
+            rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
 
             // Decide what to send based on current state
             let elementToSend = '';
