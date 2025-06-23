@@ -251,7 +251,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.09
+            version 1.10
         </div>
     </div>
 
@@ -603,8 +603,8 @@
                 // Iambic B: check if pressed during element OR currently pressed
                 squeezeActive = paddleState.squeezeCurrentlyPressed || paddleState.squeezePressedDuringElement;
             }
-            leftActive = paddleState.leftCurrentlyPressed;
-            rightActive = paddleState.rightCurrentlyPressed;
+            leftActive = paddleState.leftCurrentlyPressed || paddleState.leftCurrentlyPressed;
+            rightActive = paddleState.rightCurrentlyPressed || paddleState.rightCurrentlyPressed;
 
             // Decide what to send based on current state
             let elementToSend = '';
@@ -631,8 +631,8 @@
             morseState.lastElement = elementToSend;
 
             // Reset flags after decision
-            paddleState.leftPressedDuringElement = paddleState.leftCurrentlyPressed;
-            paddleState.rightPressedDuringElement = paddleState.rightCurrentlyPressed;
+            paddleState.leftPressedDuringElement = false;
+            paddleState.rightPressedDuringElement = false;
             paddleState.squeezePressedDuringElement = paddleState.squeezeCurrentlyPressed;
 
             playTone();
