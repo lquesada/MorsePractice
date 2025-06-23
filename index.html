@@ -402,7 +402,7 @@
                 
                 // Use triangle wave instead of sine - much softer edges
                 oscillator = audioContext.createOscillator();
-                oscillator.type = "triangle";
+                oscillator.type = "sawtooth";
                 oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
                 oscillator.connect(gainNode);
                 oscillator.start();
@@ -619,14 +619,14 @@
             // Send the element
             morseState.isTransmitting = true;
             morseState.lastElement = elementToSend;
-            
+
             // Reset flags after decision
             paddleState.leftPressedDuringElement = false;
             paddleState.rightPressedDuringElement = false;
             paddleState.squeezePressedDuringElement = false;
-            
+
             playTone();
-            
+
             const duration = (elementToSend === '.') ? timings.dit : timings.dah;
             setTimeout(() => {
                 stopTone();
