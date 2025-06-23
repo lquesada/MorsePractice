@@ -550,157 +550,99 @@
             }
         }
 
+        let paddleState = {
+            leftCurrentlyPressed: false,
+            rightCurrentlyPressed: false,
+            leftPressedDuringElement: false,
+            rightPressedDuringElement: false
+        };
+
+        function handlePaddlePress(side, isPressed) {
+            const paddle = document.getElementById(side + '-paddle');
+            
+            if (isPressed) {
+                paddle.classList.add('pressed');
+                if (side === 'left') {
+                    paddleState.leftCurrentlyPressed = true;
+                    paddleState.leftPressedDuringElement = true;
+                } else {
+                    paddleState.rightCurrentlyPressed = true;
+                    paddleState.rightPressedDuringElement = true;
+                }
+            } else {
+                paddle.classList.remove('pressed');
+                if (side === 'left') {
+                    paddleState.leftCurrentlyPressed = false;
+                } else {
+                    paddleState.rightCurrentlyPressed = false;
+                }
+            }
+            
+            if (settings.mode === 'straight') {
+                handleStraightKey(isPressed && side === 'left');
+            } else {
+                // Trigger iambic logic when paddle is pressed
+                if (isPressed && !morseState.isTransmitting) {
+                    handleIambic();
+                }
+            }
+        }   
+
         function handleIambic() {
+            if (morseState.isTransmitting) return;
+            
             const timings = getTimings();
-            const now = Date.now();
-
-            // Don't interrupt current transmission - let it complete
-            if (morseState.isTransmitting) {
-                return;
-            }
-
-            // Clear timeouts when starting new transmission
-            if (morseState.leftPressed || morseState.rightPressed || morseState.pendingElement) {
-                clearTimingTimeouts();
-            }
-
-            const timeSinceLastElement = now - morseState.lastElementTime;
-
-            // Always enforce inter-element gap before sending next tone
-            if (morseState.lastElementTime && timeSinceLastElement < timings.elementGap) {
-                const remainingGap = timings.elementGap - timeSinceLastElement;
-                setTimeout(handleIambic, remainingGap);
-                return;
-            }
-
-            // Handle pending element from squeeze
-            if (morseState.pendingElement) {
-                transmitElement(morseState.pendingElement);
-                morseState.pendingElement = '';
-                return;
-            }
-
-            if (!morseState.leftPressed && !morseState.rightPressed) {
+            clearTimingTimeouts();
+            
+            // Helper function to check if a paddle is "active" (currently pressed OR was pressed during element)
+            const leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
+            const rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
+            
+            // Decide what to send based on current state
+            let elementToSend = '';
+            
+            if (leftActive && rightActive) {
+                // Both are active (squeeze) - alternate
+                elementToSend = (morseState.lastElement === '.') ? '-' : '.';
+            } else if (leftActive) {
+                // Only left is active
+                elementToSend = (settings.polarity === 'normal') ? '.' : '-';
+            } else if (rightActive) {
+                // Only right is active
+                elementToSend = (settings.polarity === 'normal') ? '-' : '.';
+            } else {
+                // Nothing to send
                 if (morseState.currentCode) {
                     setupLetterWordTimeouts();
                 }
                 return;
             }
-
-            // Determine next element
-            let nextElement = '';
-            if (morseState.leftPressed && morseState.rightPressed) {
-                if (morseState.lastElement === '.') {
-                    nextElement = '-';
-                    morseState.pendingElement = '.';
-                } else if (morseState.lastElement === '-') {
-                    nextElement = '.';
-                    morseState.pendingElement = '-';
-                } else {
-                    nextElement = settings.polarity === 'normal' ? '.' : '-';
-                    morseState.pendingElement = settings.polarity === 'normal' ? '-' : '.';
-                }
-            } else if (morseState.leftPressed) {
-                nextElement = settings.polarity === 'normal' ? '.' : '-';
-            } else if (morseState.rightPressed) {
-                nextElement = settings.polarity === 'normal' ? '-' : '.';
-            }
-
-            if (nextElement) {
-                transmitElement(nextElement);
-            }
-        }
-
-        function transmitElement(element) {
-            const timings = getTimings();
+            
+            // Reset flags after decision
+            paddleState.leftPressedDuringElement = false;
+            paddleState.rightPressedDuringElement = false;
+            
+            // Send the element
             morseState.isTransmitting = true;
-            morseState.lastElement = element;
-            morseState.elementStartTime = Date.now();
-            morseState.queuedNextElement = null; // clear before tone starts
+            morseState.lastElement = elementToSend;
             playTone();
-
-            const duration = element === '.' ? timings.dit : timings.dah;
-
+            
+            const duration = (elementToSend === '.') ? timings.dit : timings.dah;
+            
             setTimeout(() => {
                 stopTone();
                 morseState.isTransmitting = false;
-                morseState.currentCode += element;
+                morseState.currentCode += elementToSend;
                 morseState.lastElementTime = Date.now();
-
+                
+                // Schedule next element check after element gap
                 setTimeout(() => {
-                    if (morseState.queuedNextElement) {
-                        const next = morseState.queuedNextElement;
-                        morseState.queuedNextElement = null;
-                        morseState.pendingElement = next;
-                        handleIambic(); // restart with that pending element
-                    } else if (
-                        settings.mode === 'iambic-b' ||
-                        (settings.mode === 'iambic-a' && morseState.leftPressed && morseState.rightPressed)
-                    ) {
-                        handleIambic();
-                    } else {
-                        if (morseState.currentCode) {
-                            setupLetterWordTimeouts();
-                        }
-                    }
+                    handleIambic();
                 }, timings.elementGap);
+                
             }, duration);
         }
 
-        // Handle paddle press
-        function handlePaddlePress(side, isPressed) {
-            const paddle = document.getElementById(side + '-paddle');
-            const isLeft = side === 'left';
-
-            // Update visual state
-            if (isPressed) {
-                paddle.classList.add('pressed');
-            } else {
-                paddle.classList.remove('pressed');
-            }
-
-            // Update morseState
-            morseState[isLeft ? 'leftPressed' : 'rightPressed'] = isPressed;
-
-            // Skip straight key logic
-            if (settings.mode === 'straight') {
-                handleStraightKey(isPressed && isLeft);
-                return;
-            }
-
-            // === PRESSED logic ===
-            if (isPressed) {
-                const dot = settings.polarity === 'normal' ? '.' : '-';
-                const dash = settings.polarity === 'normal' ? '-' : '.';
-                const thisElement = isLeft ? dot : dash;
-                const otherElement = isLeft ? dash : dot;
-
-                if (morseState.isTransmitting) {
-                    // If already transmitting, only queue next if not already queued
-                    if (!morseState.queuedNextElement && !morseState.pendingElement) {
-                        morseState.queuedNextElement = thisElement;
-                    }
-                } else if (morseState.leftPressed && morseState.rightPressed) {
-                    // Handle Iambic squeeze
-                    if (!morseState.pendingElement) {
-                        if (morseState.lastElement === dot) {
-                            morseState.pendingElement = dash;
-                        } else if (morseState.lastElement === dash) {
-                            morseState.pendingElement = dot;
-                        } else {
-                            // First squeeze
-                            morseState.pendingElement = otherElement;
-                        }
-                    }
-                }
-
-                // Kick off iambic logic
-                setTimeout(() => handleIambic(), 0);
-            }
-        }
- 
-
-        
         // Setup sliders
         function setupSliders() {
             const wpmSlider = document.getElementById('wpm-slider');
