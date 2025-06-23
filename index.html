@@ -386,7 +386,7 @@
         let audioInitialized = false;
         let audioReady = false;
         const TONE_GAIN = 0.5;
-        const FLOOR_GAIN = 0.0;
+        const FLOOR_GAIN = 0.00001;
         const RAMP_TIME = 0.5; // Increased to 50ms for smoother transitions
 
         function initAudio() {
@@ -570,10 +570,19 @@
             const timings = getTimings();
             clearTimingTimeouts();
             
-            // Helper function to check if a paddle is "active" (currently pressed OR was pressed during element)
-            const leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
-            const rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
+            // Different logic for Iambic A vs Iambic B
+            let leftActive, rightActive;
             
+            if (settings.mode === 'iambic-a') {
+                // Iambic A: only check what's currently pressed (squeeze must be held)
+                leftActive = paddleState.leftCurrentlyPressed;
+                rightActive = paddleState.rightCurrentlyPressed;
+            } else {
+                // Iambic B: check if pressed during element OR currently pressed
+                leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
+                rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
+            }
+
             // Decide what to send based on current state
             let elementToSend = '';
             
@@ -594,13 +603,14 @@
                 return;
             }
             
+            // Send the element
+            morseState.isTransmitting = true;
+            morseState.lastElement = elementToSend;
+            
             // Reset flags after decision
             paddleState.leftPressedDuringElement = false;
             paddleState.rightPressedDuringElement = false;
             
-            // Send the element
-            morseState.isTransmitting = true;
-            morseState.lastElement = elementToSend;
             playTone();
             
             const duration = (elementToSend === '.') ? timings.dit : timings.dah;
