@@ -375,7 +375,8 @@
             elementQueue: [],
             letterTimeout: null,
             wordTimeout: null,
-            elementStartTime: 0
+            elementStartTime: 0,
+            iambicScheduled: false
         };
 
         // Audio context and oscillator
@@ -577,7 +578,7 @@
         }
 
         function handleIambic() {
-            if (morseState.isTransmitting) return;
+            if (morseState.isTransmitting || morseState.iambicScheduled) return;
             
             const timings = getTimings();
             clearTimingTimeouts();
@@ -627,7 +628,6 @@
             playTone();
             
             const duration = (elementToSend === '.') ? timings.dit : timings.dah;
-            
             setTimeout(() => {
                 stopTone();
                 morseState.isTransmitting = false;
@@ -635,7 +635,9 @@
                 morseState.lastElementTime = Date.now();
                 
                 // Schedule next element check after element gap
+                morseState.iambicScheduled = true;
                 setTimeout(() => {
+                    morseState.iambicScheduled = false;
                     handleIambic();
                 }, timings.elementGap);
                 
