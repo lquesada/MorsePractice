@@ -134,7 +134,7 @@
         }
 
         .buttons {
-            height: 400px;
+            min-height: 300px;
             display: flex;
             background: #2a2a2a;
             user-select: none;
@@ -255,7 +255,12 @@
         </div>
     </div>
 
+        
     <div class="controls">
+        <div class="control-group">
+            <button id="clear-output-btn" class="utility-btn">Clear</button>
+        </div>
+
         <div class="control-group">
             <label>Key:</label>
             <div class="mode-buttons">
@@ -276,16 +281,6 @@
         </div>
         
         <div class="control-group">
-            <label>Tone:</label>
-            <div class="slider-container">
-                <div class="slider" id="tone-slider">
-                    <div class="slider-thumb"></div>
-                </div>
-                <div class="slider-value" id="tone-value">700</div>
-            </div>
-        </div>
-        
-        <div class="control-group">
             <label>Polarity:</label>
             <div class="mode-buttons">
                 <button class="polarity-btn" data-polarity="normal">Normal</button>
@@ -294,7 +289,23 @@
         </div>
 
         <div class="control-group">
-            <button id="clear-output-btn" class="utility-btn">Clear</button>
+            <label>Vol:</label>
+            <div class="slider-container">
+                <div class="slider" id="vol-slider">
+                    <div class="slider-thumb"></div>
+                </div>
+                <div class="slider-value" id="vol-value">15</div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Tone:</label>
+            <div class="slider-container">
+                <div class="slider" id="tone-slider">
+                    <div class="slider-thumb"></div>
+                </div>
+                <div class="slider-value" id="tone-value">700</div>
+            </div>
         </div>
     </div>
     
@@ -337,6 +348,7 @@
                     return {
                         mode: parsed.mode || 'iambic-b',
                         wpm: parsed.wpm || 15,
+                        vol: parsed.vol || 40,
                         tone: parsed.tone || 700,
                         polarity: parsed.polarity || 'normal'
                     };
@@ -348,6 +360,7 @@
             return {
                 mode: 'iambic-b',
                 wpm: 15,
+                vol: 40,
                 tone: 700,
                 polarity: 'normal'
             };
@@ -386,7 +399,6 @@
         let filterNode;
         let audioInitialized = false;
         let audioReady = false;
-        const TONE_GAIN = 0.4;
         const FLOOR_GAIN = 0.0;
 
         function initAudio() {
@@ -417,7 +429,7 @@
             
             const now = audioContext.currentTime;
             gainNode.gain.cancelScheduledValues(now);
-            gainNode.gain.setValueAtTime(TONE_GAIN, now);
+            gainNode.gain.setValueAtTime(settings.vol / 100., now);
         }
 
         function stopTone() {
@@ -649,6 +661,10 @@
             const wpmThumb = wpmSlider.querySelector('.slider-thumb');
             const wpmValue = document.getElementById('wpm-value');
             
+            const volSlider = document.getElementById('vol-slider');
+            const volThumb = volSlider.querySelector('.slider-thumb');
+            const volValue = document.getElementById('vol-value');
+            
             const toneSlider = document.getElementById('tone-slider');
             const toneThumb = toneSlider.querySelector('.slider-thumb');
             const toneValue = document.getElementById('tone-value');
@@ -698,6 +714,11 @@
             
             updateSlider(wpmSlider, wpmThumb, wpmValue, 5, 60, settings.wpm, (value) => {
                 settings.wpm = value;
+                saveSettings();
+            });
+            
+            updateSlider(volSlider, volThumb, volValue, 0, 100, settings.vol, (value) => {
+                settings.vol = value;
                 saveSettings();
             });
             
