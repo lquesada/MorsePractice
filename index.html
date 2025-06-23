@@ -603,9 +603,8 @@
                 // Iambic B: check if pressed during element OR currently pressed
                 squeezeActive = paddleState.squeezeCurrentlyPressed || paddleState.squeezePressedDuringElement;
             }
-            leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
-            rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
-            paddleState.leftPressedDuringElement, paddleState.rightPressedDuringElement, "AND", paddleState.squeezePressedDuringElement);
+            leftActive = paddleState.leftCurrentlyPressed;
+            rightActive = paddleState.rightCurrentlyPressed;
 
             // Decide what to send based on current state
             let elementToSend = '';
