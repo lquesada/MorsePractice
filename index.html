@@ -251,7 +251,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.04
+            version 1.06
         </div>
     </div>
 
@@ -386,8 +386,8 @@
         let audioInitialized = false;
         let audioReady = false;
         const TONE_GAIN = 0.5;
-        const FLOOR_GAIN = 0.000001;
-        const ENV_TIME = 0.05; // Increased to 50ms for smoother transitions
+        const FLOOR_GAIN = 0.0;
+        const RAMP_TIME = 0.5; // Increased to 50ms for smoother transitions
 
         function initAudio() {
             if (audioInitialized) return;
@@ -395,23 +395,13 @@
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 
-                // Gain node with quiet floor
                 gainNode = audioContext.createGain();
                 gainNode.gain.setValueAtTime(FLOOR_GAIN, audioContext.currentTime);
+                gainNode.connect(audioContext.destination);
                 
-                // Optional: high-pass filter to reduce low-freq pops/clicks
-                filterNode = audioContext.createBiquadFilter();
-                filterNode.type = "highpass";
-                filterNode.frequency.setValueAtTime(200, audioContext.currentTime);
-                filterNode.Q.value = 0.707;
-                
-                // Connect chain: oscillator → gain → filter → speakers
-                gainNode.connect(filterNode);
-                filterNode.connect(audioContext.destination);
-                
-                // Start persistent oscillator
+                // Use triangle wave instead of sine - much softer edges
                 oscillator = audioContext.createOscillator();
-                oscillator.type = "sine";
+                oscillator.type = "triangle";
                 oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
                 oscillator.connect(gainNode);
                 oscillator.start();
@@ -427,9 +417,7 @@
             
             const now = audioContext.currentTime;
             gainNode.gain.cancelScheduledValues(now);
-            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            // Use linear ramp for fade-in
-            gainNode.gain.linearRampToValueAtTime(TONE_GAIN, now + ENV_TIME);
+            gainNode.gain.setValueAtTime(TONE_GAIN, now);
         }
 
         function stopTone() {
@@ -437,21 +425,9 @@
             
             const now = audioContext.currentTime;
             gainNode.gain.cancelScheduledValues(now);
-            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            // Use linear ramp for fade-out - this is the key change
-            gainNode.gain.linearRampToValueAtTime(FLOOR_GAIN, now + ENV_TIME);
+            gainNode.gain.setValueAtTime(FLOOR_GAIN, now);
         }
 
-        // Alternative version with setTargetAtTime for even smoother fade-out
-        function stopToneSmooth() {
-            if (!audioContext || !gainNode || !audioReady) return;
-            
-            const now = audioContext.currentTime;
-            gainNode.gain.cancelScheduledValues(now);
-            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            // Use setTargetAtTime with fast time constant for smooth fade
-            gainNode.gain.setTargetAtTime(FLOOR_GAIN, now, 0.015); // 15ms time constant
-        }
 
         // Get timing values based on WPM
         function getTimings() {
