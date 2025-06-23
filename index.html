@@ -139,6 +139,17 @@
             background: #2a2a2a;
         }
 
+        .utility-btn {
+            padding: 8px 16px;
+            border: 2px solid #555;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
         .paddle {
             flex: 1;
             border: none;
@@ -240,7 +251,7 @@
 
     <div class="controls">
         <div class="control-group">
-            <label>Key type:</label>
+            <label>Key:</label>
             <div class="mode-buttons">
                 <button class="mode-btn" data-mode="straight">Straight</button>
                 <button class="mode-btn" data-mode="iambic-a">Iambic A</button>
@@ -274,6 +285,10 @@
                 <button class="polarity-btn" data-polarity="normal">Normal</button>
                 <button class="polarity-btn" data-polarity="inverse">Inverse</button>
             </div>
+        </div>
+
+        <div class="control-group">
+            <button id="clear-output-btn" class="utility-btn">Clear</button>
         </div>
     </div>
     
@@ -957,6 +972,10 @@
 
         function init() {
             settings = loadSettings();
+
+            document.getElementById('clear-output-btn').addEventListener('click', () => {
+                document.getElementById('output').textContent = '';
+            });
 
             const startOverlay = document.getElementById('start-overlay');
             
