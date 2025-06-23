@@ -616,17 +616,10 @@
             morseState.isTransmitting = true;
             morseState.lastElement = element;
             morseState.elementStartTime = Date.now();
+            morseState.queuedNextElement = null; // clear before tone starts
             playTone();
 
             const duration = element === '.' ? timings.dit : timings.dah;
-
-            // For Iambic B: pre-queue the next alternate element *during* transmission
-            if (
-                settings.mode === 'iambic-b' &&
-                morseState.leftPressed && morseState.rightPressed
-            ) {
-                morseState.pendingElement = element === '.' ? '-' : '.';
-            }
 
             setTimeout(() => {
                 stopTone();
@@ -635,8 +628,12 @@
                 morseState.lastElementTime = Date.now();
 
                 setTimeout(() => {
-                    // Continue if still squeezing (iambic A or B rules)
-                    if (
+                    if (morseState.queuedNextElement) {
+                        const next = morseState.queuedNextElement;
+                        morseState.queuedNextElement = null;
+                        morseState.pendingElement = next;
+                        handleIambic(); // restart with that pending element
+                    } else if (
                         settings.mode === 'iambic-b' ||
                         (settings.mode === 'iambic-a' && morseState.leftPressed && morseState.rightPressed)
                     ) {
@@ -653,50 +650,56 @@
         // Handle paddle press
         function handlePaddlePress(side, isPressed) {
             const paddle = document.getElementById(side + '-paddle');
+            const isLeft = side === 'left';
+
+            // Update visual state
             if (isPressed) {
                 paddle.classList.add('pressed');
-                if (side === 'left') {
-                    morseState.leftPressed = true;
-                } else {
-                    morseState.rightPressed = true;
-                }
-                
-                // For both Iambic A and B: detect squeeze when second paddle is pressed
-                if (settings.mode !== 'straight' && morseState.leftPressed && morseState.rightPressed) {
-                    // Only set pending element if we don't already have one
+            } else {
+                paddle.classList.remove('pressed');
+            }
+
+            // Update morseState
+            morseState[isLeft ? 'leftPressed' : 'rightPressed'] = isPressed;
+
+            // Skip straight key logic
+            if (settings.mode === 'straight') {
+                handleStraightKey(isPressed && isLeft);
+                return;
+            }
+
+            // === PRESSED logic ===
+            if (isPressed) {
+                const dot = settings.polarity === 'normal' ? '.' : '-';
+                const dash = settings.polarity === 'normal' ? '-' : '.';
+                const thisElement = isLeft ? dot : dash;
+                const otherElement = isLeft ? dash : dot;
+
+                if (morseState.isTransmitting) {
+                    // If already transmitting, only queue next if not already queued
+                    if (!morseState.queuedNextElement && !morseState.pendingElement) {
+                        morseState.queuedNextElement = thisElement;
+                    }
+                } else if (morseState.leftPressed && morseState.rightPressed) {
+                    // Handle Iambic squeeze
                     if (!morseState.pendingElement) {
-                        if (morseState.isTransmitting) {
-                            // Currently transmitting - queue the opposite of what's being sent
-                            if (morseState.lastElement === '.') {
-                                morseState.pendingElement = '-';
-                            } else if (morseState.lastElement === '-') {
-                                morseState.pendingElement = '.';
-                            }
+                        if (morseState.lastElement === dot) {
+                            morseState.pendingElement = dash;
+                        } else if (morseState.lastElement === dash) {
+                            morseState.pendingElement = dot;
                         } else {
-                            // Not transmitting yet - queue the opposite of what will be sent first
-                            const firstElement = settings.polarity === 'normal' ? '.' : '-';
-                            morseState.pendingElement = settings.polarity === 'normal' ? '-' : '.';
+                            // First squeeze
+                            morseState.pendingElement = otherElement;
                         }
                     }
                 }
-            } else {
-                paddle.classList.remove('pressed');
-                if (side === 'left') {
-                    morseState.leftPressed = false;
-                } else {
-                    morseState.rightPressed = false;
-                }
-            }
-            
-            if (settings.mode === 'straight') {
-                handleStraightKey(isPressed && side === 'left');
-            } else {
-                // For iambic modes, start transmission when paddle pressed
-                if (isPressed) {
-                    setTimeout(() => handleIambic(), 0); // Allow stack to clear
-                }
+
+                // Kick off iambic logic
+                setTimeout(() => handleIambic(), 0);
             }
         }
+ 
+
         
         // Setup sliders
         function setupSliders() {
