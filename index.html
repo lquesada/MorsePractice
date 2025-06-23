@@ -386,9 +386,8 @@
         let filterNode;
         let audioInitialized = false;
         let audioReady = false;
-        const TONE_GAIN = 0.5;
-        const FLOOR_GAIN = 0.00001;
-        const RAMP_TIME = 0.5; // Increased to 50ms for smoother transitions
+        const TONE_GAIN = 0.4;
+        const FLOOR_GAIN = 0.0;
 
         function initAudio() {
             if (audioInitialized) return;
