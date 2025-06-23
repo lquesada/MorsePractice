@@ -251,7 +251,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.07
+            version 1.09
         </div>
     </div>
 
@@ -384,7 +384,6 @@
             leftPressed: false,
             rightPressed: false,
             lastElement: '',
-            pendingElement: '',
             elementQueue: [],
             letterTimeout: null,
             wordTimeout: null,
@@ -606,6 +605,7 @@
             }
             leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
             rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
+            paddleState.leftPressedDuringElement, paddleState.rightPressedDuringElement, "AND", paddleState.squeezePressedDuringElement);
 
             // Decide what to send based on current state
             let elementToSend = '';
@@ -632,9 +632,9 @@
             morseState.lastElement = elementToSend;
 
             // Reset flags after decision
-            paddleState.leftPressedDuringElement = false;
-            paddleState.rightPressedDuringElement = false;
-            paddleState.squeezePressedDuringElement = false;
+            paddleState.leftPressedDuringElement = paddleState.leftCurrentlyPressed;
+            paddleState.rightPressedDuringElement = paddleState.rightCurrentlyPressed;
+            paddleState.squeezePressedDuringElement = paddleState.squeezeCurrentlyPressed;
 
             playTone();
 
