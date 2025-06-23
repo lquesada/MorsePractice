@@ -530,7 +530,9 @@
             leftCurrentlyPressed: false,
             rightCurrentlyPressed: false,
             leftPressedDuringElement: false,
-            rightPressedDuringElement: false
+            rightPressedDuringElement: false,
+            squeezeCurrentlyPressed: false,
+            squeezePressedDuringElement: false
         };
 
         function handlePaddlePress(side, isPressed) {
@@ -540,10 +542,14 @@
                 paddle.classList.add('pressed');
                 if (side === 'left') {
                     paddleState.leftCurrentlyPressed = true;
-                    paddleState.leftPressedDuringElement = true;
+                    if (morseState.isTransmitting) {
+                        paddleState.leftPressedDuringElement = true;
+                    }
                 } else {
                     paddleState.rightCurrentlyPressed = true;
-                    paddleState.rightPressedDuringElement = true;
+                    if (morseState.isTransmitting) {
+                        paddleState.rightPressedDuringElement = true;
+                    }
                 }
             } else {
                 paddle.classList.remove('pressed');
@@ -554,6 +560,12 @@
                 }
             }
             
+            // Update squeeze state
+            paddleState.squeezeCurrentlyPressed = paddleState.leftCurrentlyPressed && paddleState.rightCurrentlyPressed;
+            if (paddleState.squeezeCurrentlyPressed && morseState.isTransmitting) {
+                paddleState.squeezePressedDuringElement = true;
+            }
+            
             if (settings.mode === 'straight') {
                 handleStraightKey(isPressed && side === 'left');
             } else {
@@ -562,7 +574,7 @@
                     handleIambic();
                 }
             }
-        }   
+        }
 
         function handleIambic() {
             if (morseState.isTransmitting) return;
@@ -575,18 +587,18 @@
             
             if (settings.mode === 'iambic-a') {
                 // Iambic A: only check what's currently pressed (squeeze must be held)
-                leftActive = paddleState.leftCurrentlyPressed;
-                rightActive = paddleState.rightCurrentlyPressed;
+                squeezeActive = paddleState.squeezeCurrentlyPressed;
             } else {
                 // Iambic B: check if pressed during element OR currently pressed
-                leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
-                rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
+                squeezeActive = paddleState.squeezeCurrentlyPressed || paddleState.squeezePressedDuringElement;
             }
+            leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
+            rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
 
             // Decide what to send based on current state
             let elementToSend = '';
             
-            if (leftActive && rightActive) {
+            if (squeezeActive) {
                 // Both are active (squeeze) - alternate
                 elementToSend = (morseState.lastElement === '.') ? '-' : '.';
             } else if (leftActive) {
@@ -610,6 +622,7 @@
             // Reset flags after decision
             paddleState.leftPressedDuringElement = false;
             paddleState.rightPressedDuringElement = false;
+            paddleState.squeezePressedDuringElement = false;
             
             playTone();
             
