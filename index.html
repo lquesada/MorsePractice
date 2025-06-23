@@ -251,7 +251,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            Version 1.03
+            v 1.02
         </div>
     </div>
 
@@ -550,60 +550,92 @@
             }
         }
 
-        // Initialize pendingElements array somewhere once
-        if (!morseState.pendingElements) morseState.pendingElements = [];
-
         function handleIambic() {
             const timings = getTimings();
-            
+            const now = Date.now();
+
+            // Don't interrupt current transmission - let it complete
             if (morseState.isTransmitting) {
                 return;
             }
-            
-            morseState.pendingElements = morseState.pendingElements || [];
-            
-            if (morseState.pendingElements.length === 0) {
-                // No queued elements - check if paddles are pressed and queue accordingly
-                if (morseState.leftPressed && morseState.rightPressed) {
-                    // Squeeze: alternate elements
-                    let nextElement = (morseState.lastElement === '.') ? '-' : '.';
-                    morseState.pendingElements.push(nextElement);
-                } else if (morseState.leftPressed) {
-                    const nextElement = (settings.polarity === 'normal') ? '.' : '-';
-                    morseState.pendingElements.push(nextElement);
-                } else if (morseState.rightPressed) {
-                    const nextElement = (settings.polarity === 'normal') ? '-' : '.';
-                    morseState.pendingElements.push(nextElement);
-                } else {
-                    // No paddles pressed, nothing to do
-                    if (morseState.currentCode) {
-                        setupLetterWordTimeouts();
-                    }
-                    return;
-                }
+
+            // Clear timeouts when starting new transmission
+            if (morseState.leftPressed || morseState.rightPressed || morseState.pendingElement) {
+                clearTimingTimeouts();
             }
-            
-            // Now send the next element from the queue
-            const element = morseState.pendingElements.shift();
+
+            const timeSinceLastElement = now - morseState.lastElementTime;
+
+            // Always enforce inter-element gap before sending next tone
+            if (morseState.lastElementTime && timeSinceLastElement < timings.elementGap) {
+                const remainingGap = timings.elementGap - timeSinceLastElement;
+                setTimeout(handleIambic, remainingGap);
+                return;
+            }
+
+            // Handle pending element from squeeze
+            if (morseState.pendingElement) {
+                transmitElement(morseState.pendingElement);
+                morseState.pendingElement = '';
+                return;
+            }
+
+            if (!morseState.leftPressed && !morseState.rightPressed) {
+                if (morseState.currentCode) {
+                    setupLetterWordTimeouts();
+                }
+                return;
+            }
+
+            // Determine next element
+            let nextElement = '';
+            if (morseState.leftPressed && morseState.rightPressed) {
+                if (morseState.lastElement === '.') {
+                    nextElement = '-';
+                    morseState.pendingElement = '.';
+                } else if (morseState.lastElement === '-') {
+                    nextElement = '.';
+                    morseState.pendingElement = '-';
+                } else {
+                    nextElement = settings.polarity === 'normal' ? '.' : '-';
+                    morseState.pendingElement = settings.polarity === 'normal' ? '-' : '.';
+                }
+            } else if (morseState.leftPressed) {
+                nextElement = settings.polarity === 'normal' ? '.' : '-';
+            } else if (morseState.rightPressed) {
+                nextElement = settings.polarity === 'normal' ? '-' : '.';
+            }
+
+            if (nextElement) {
+                transmitElement(nextElement);
+            }
+        }
+
+        function transmitElement(element) {
+            const timings = getTimings();
             morseState.isTransmitting = true;
             morseState.lastElement = element;
             morseState.elementStartTime = Date.now();
             playTone();
-            
+
             const duration = element === '.' ? timings.dit : timings.dah;
-            
+
             setTimeout(() => {
                 stopTone();
                 morseState.isTransmitting = false;
                 morseState.currentCode += element;
                 morseState.lastElementTime = Date.now();
-                
+
                 setTimeout(() => {
-                    // Continue sending if paddles pressed or queue not empty
-                    if (morseState.pendingElements.length > 0 || morseState.leftPressed || morseState.rightPressed) {
+                    if (
+                        settings.mode === 'iambic-b' ||
+                        (settings.mode === 'iambic-a' && morseState.leftPressed && morseState.rightPressed)
+                    ) {
                         handleIambic();
-                    } else if (morseState.currentCode) {
-                        setupLetterWordTimeouts();
+                    } else {
+                        if (morseState.currentCode) {
+                            setupLetterWordTimeouts();
+                        }
                     }
                 }, timings.elementGap);
             }, duration);
@@ -620,21 +652,22 @@
                     morseState.rightPressed = true;
                 }
                 
-                // Determine element for this paddle press
-                const elementForSide = (side === 'left') 
-                    ? (settings.polarity === 'normal' ? '.' : '-') 
-                    : (settings.polarity === 'normal' ? '-' : '.');
-                
-                if (settings.mode !== 'straight') {
-                    // If currently transmitting, queue this element
-                    if (morseState.isTransmitting) {
-                        morseState.pendingElements = morseState.pendingElements || [];
-                        morseState.pendingElements.push(elementForSide);
-                    } else {
-                        // Not transmitting yet, start transmission by immediately calling handleIambic()
-                        morseState.pendingElements = morseState.pendingElements || [];
-                        morseState.pendingElements.push(elementForSide);
-                        setTimeout(() => handleIambic(), 0);
+                // For both Iambic A and B: detect squeeze when second paddle is pressed
+                if (settings.mode !== 'straight' && morseState.leftPressed && morseState.rightPressed) {
+                    // Only set pending element if we don't already have one
+                    if (!morseState.pendingElement) {
+                        if (morseState.isTransmitting) {
+                            // Currently transmitting - queue the opposite of what's being sent
+                            if (morseState.lastElement === '.') {
+                                morseState.pendingElement = '-';
+                            } else if (morseState.lastElement === '-') {
+                                morseState.pendingElement = '.';
+                            }
+                        } else {
+                            // Not transmitting yet - queue the opposite of what will be sent first
+                            const firstElement = settings.polarity === 'normal' ? '.' : '-';
+                            morseState.pendingElement = settings.polarity === 'normal' ? '-' : '.';
+                        }
                     }
                 }
             } else {
@@ -648,6 +681,11 @@
             
             if (settings.mode === 'straight') {
                 handleStraightKey(isPressed && side === 'left');
+            } else {
+                // For iambic modes, start transmission when paddle pressed
+                if (isPressed) {
+                    setTimeout(() => handleIambic(), 0); // Allow stack to clear
+                }
             }
         }
         
