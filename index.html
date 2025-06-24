@@ -251,7 +251,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.12
+            version 1.13
         </div>
     </div>
 
@@ -391,53 +391,75 @@
             iambicScheduled: false
         };
 
-        // Audio context and oscillator
+
+        // Audio
         let audioContext;
-        let oscillator;
-        let gainNode;
-        let filterNode;
         let audioInitialized = false;
         let audioReady = false;
-        const FLOOR_GAIN = 0.0;
+        let currentOscillator = null;
+        let currentGain = null;
 
         function initAudio() {
             if (audioInitialized) return;
             audioInitialized = true;
+
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                gainNode = audioContext.createGain();
-                gainNode.gain.setValueAtTime(FLOOR_GAIN, audioContext.currentTime);
-                gainNode.connect(audioContext.destination);
-                
-                // Use triangle wave instead of sine - much softer edges
-                oscillator = audioContext.createOscillator();
-                oscillator.type = "sawtooth";
-                oscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
-                oscillator.connect(gainNode);
-                oscillator.start();
-                
                 audioReady = true;
             } catch (e) {
                 console.error("Audio init failed:", e);
+                audioReady = false;
             }
         }
 
-        function playTone() {
-            if (!audioContext || !gainNode || !audioReady) return;
-            
+        function playTone(duration = null) {
+            if (!audioContext || !audioReady) return;
+
             const now = audioContext.currentTime;
-            gainNode.gain.cancelScheduledValues(now);
-            gainNode.gain.setValueAtTime(settings.vol / 100., now);
+
+            // Create a new oscillator and gain node
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.type = "square"; 
+            osc.frequency.setValueAtTime(settings.tone, now);
+            gain.gain.setValueAtTime(settings.vol / 100, now);
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start(now);
+
+            if (duration) {
+                osc.stop(now + duration / 1000);
+            }
+
+            // Store for optional manual stopping
+            currentOscillator = osc;
+            currentGain = gain;
         }
 
         function stopTone() {
-            if (!audioContext || !gainNode || !audioReady) return;
-            
-            const now = audioContext.currentTime;
-            gainNode.gain.cancelScheduledValues(now);
-            gainNode.gain.setValueAtTime(FLOOR_GAIN, now);
+            if (!audioContext || !audioReady) return;
+
+            if (currentGain) {
+                const now = audioContext.currentTime;
+                currentGain.gain.cancelScheduledValues(now);
+                currentGain.gain.setValueAtTime(0, now);
+            }
+
+            if (currentOscillator) {
+                try {
+                    currentOscillator.stop();
+                } catch (e) {
+                    // already stopped
+                }
+                currentOscillator.disconnect();
+                currentOscillator = null;
+                currentGain = null;
+            }
         }
+
 
 
         // Get timing values based on WPM
