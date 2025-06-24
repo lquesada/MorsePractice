@@ -251,7 +251,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.11
+            version 1.12
         </div>
     </div>
 
@@ -553,12 +553,12 @@
                 paddle.classList.add('pressed');
                 if (side === 'left') {
                     paddleState.leftCurrentlyPressed = true;
-                    if (morseState.isTransmitting) {
+                    if (morseState.isTransmitting || morseState.iambicScheduled) {
                         paddleState.leftPressedDuringElement = true;
                     }
                 } else {
                     paddleState.rightCurrentlyPressed = true;
-                    if (morseState.isTransmitting) {
+                    if (morseState.isTransmitting || morseState.iambicScheduled) {
                         paddleState.rightPressedDuringElement = true;
                     }
                 }
@@ -576,7 +576,7 @@
             if (paddleState.squeezeCurrentlyPressed && morseState.isTransmitting) {
                 paddleState.squeezePressedDuringElement = true;
             }
-            
+
             if (settings.mode === 'straight') {
                 handleStraightKey(isPressed && side === 'left');
             } else {
@@ -609,7 +609,10 @@
             // Decide what to send based on current state
             let elementToSend = '';
             
-            if (squeezeActive) {
+            if (squeezeActive ||
+               (morseState.lastElement == '.' && paddleState.leftCurrentlyPressed && paddleState.rightPressedDuringElement) ||
+               (morseState.lastElement == '-' && paddleState.rightCurrentlyPressed && paddleState.leftPressedDuringElement)
+            ) {
                 // Both are active (squeeze) - alternate
                 elementToSend = (morseState.lastElement === '.') ? '-' : '.';
             } else if (leftActive) {
@@ -626,6 +629,8 @@
                 return;
             }
             
+            //console.log("LC", paddleState.leftCurrentlyPressed, "RC", paddleState.rightCurrentlyPressed, "SC", paddleState.squeezeCurrentlyPressed, "LD", paddleState.leftPressedDuringElement, "RD", paddleState.rightPressedDuringElement, "SD", paddleState.squeezePressedDuringElement, "NE", elementToSend, "PR", morseState.lastElement)
+
             // Send the element
             morseState.isTransmitting = true;
             morseState.lastElement = elementToSend;
