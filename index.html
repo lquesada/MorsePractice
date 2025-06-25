@@ -279,21 +279,36 @@
             border-right: none;
         }
 
-        .paddle:active, .paddle.pressed {
+        .paddle.left:active {
+            background: #444;
+        }
+        .paddle.right:active {
+            background: #555;
+        }
+        .paddle.pressed {
             background: #007acc !important;
         }
 
         .openline {
             display: block;
-            font-size: 70px;
+            font-size: 50px;
             color: #ddaa55;
+            padding: 10px;
+        }
+
+        .instructions {
+            display: block;
+            max-width: 500px;
+            font-size: 18px;
+            line-height: 24px;
+            color: #dddddd;
             padding: 20px;
         }
 
         .credit {
             display: block;
             padding: 50px;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         .credit a:link,
@@ -307,7 +322,7 @@
         .version {
             display: block;
             padding: 0px;
-            font-size: 10px;
+            font-size: 14px;
         }
 
         @media (max-width: 768px) {
@@ -354,12 +369,13 @@
 <body>
     <div id="start-overlay">
         <div class="openline">Morse Practice</div>
-        <div class="openline">Click to start</div>
+        <div class="openline">[Click to Start]</div>
+        <div class="instructions">Instructions: Use a keyboard, touch screen, mouse, or a paddle with usb adapter to key. For an USB-to-keyboard paddle adapter, map it to any of the supported keys. For an USB-to-mouse paddle adapter, leave the mouse above the left paddle - right clicks (right key paddle) will trigger the app right paddle.</div>
         <div class="credit" id="credit">
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.15
+            version 1.16
         </div>
     </div>
 
@@ -992,13 +1008,13 @@
                         rightPaddle.style.display = 'none';
                         leftPaddle.classList.remove('left');
                         leftPaddle.classList.add('single');
-                        leftPaddle.textContent = 'tap or [ or A or left arrow';
+                        leftPaddle.textContent = 'tap / click / [ / A / ← / ,';
                     } else {
                         rightPaddle.style.display = 'flex';
                         leftPaddle.classList.remove('single');
                         leftPaddle.classList.add('left');
-                        leftPaddle.textContent = 'tap or [ or A or left arrow';
-                        rightPaddle.textContent = 'tap or ] or D or right arrow';
+                        leftPaddle.textContent = 'tap / click / [ / A / ← / ,';
+                        rightPaddle.textContent = 'tap / click / ] / D / → / .';
                     }
                 });
                 
@@ -1117,20 +1133,78 @@
             document.addEventListener('touchend', handleTouchEnd, { passive: false });
             document.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
-            // Mouse and keyboard listeners remain unchanged...
+            // Mouse and keyboard listeners
             leftPaddle.addEventListener('mousedown', (e) => {
                 e.preventDefault();
-                handlePaddlePress('left', true);
+                if (e.button === 0) { // Left click on left paddle = left paddle
+                    handlePaddlePress('left', true);
+                } else if (e.button === 2) { // Right click on left paddle = right paddle
+                    handlePaddlePress('right', true);
+                }
             });
 
             rightPaddle.addEventListener('mousedown', (e) => {
                 e.preventDefault();
-                handlePaddlePress('right', true);
+                if (e.button === 0) { // Left click on right paddle = right paddle
+                    handlePaddlePress('right', true);
+                } else if (e.button === 2) { // Right click on right paddle = left paddle
+                    handlePaddlePress('left', true);
+                }
             });
 
-            document.addEventListener('mouseup', () => {
-                handlePaddlePress('left', false);
-                handlePaddlePress('right', false);
+            // Handle context menu events (right-click)
+            leftPaddle.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            rightPaddle.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            // Track which paddle/button combinations are active
+            let leftClickActive = false;
+            let rightClickActive = false;
+            let leftClickTarget = null; // which paddle was left-clicked
+            let rightClickTarget = null; // which paddle was right-clicked
+
+            document.addEventListener('mousedown', (e) => {
+                const target = e.target;
+                if (e.button === 0) {
+                    leftClickActive = true;
+                    leftClickTarget = target;
+                }
+                if (e.button === 2) {
+                    rightClickActive = true;
+                    rightClickTarget = target;
+                }
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (e.button === 0 && leftClickActive) {
+                    leftClickActive = false;
+                    // Release the paddle that was activated by left-click
+                    if (leftClickTarget === leftPaddle) {
+                        handlePaddlePress('left', false);
+                    } else if (leftClickTarget === rightPaddle) {
+                        handlePaddlePress('right', false);
+                    }
+                    leftClickTarget = null;
+                }
+                if (e.button === 2 && rightClickActive) {
+                    rightClickActive = false;
+                    // Release the paddle that was activated by right-click
+                    if (rightClickTarget === leftPaddle) {
+                        handlePaddlePress('right', false);
+                    } else if (rightClickTarget === rightPaddle) {
+                        handlePaddlePress('left', false);
+                    }
+                    rightClickTarget = null;
+                }
+            });
+
+            // Prevent context menu from appearing anywhere
+            document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
             });
 
             document.addEventListener('keydown', (e) => {
@@ -1139,6 +1213,7 @@
                     case '[':
                     case 'a':
                     case 'A':
+                    case ',':
                     case 'ArrowLeft':
                         e.preventDefault();
                         handlePaddlePress('left', true);
@@ -1146,6 +1221,7 @@
                     case ']':
                     case 'd':
                     case 'D':
+                    case '.':
                     case 'ArrowRight':
                         e.preventDefault();
                         handlePaddlePress('right', true);
@@ -1158,6 +1234,7 @@
                     case '[':
                     case 'a':
                     case 'A':
+                    case ',':
                     case 'ArrowLeft':
                         e.preventDefault();
                         handlePaddlePress('left', false);
@@ -1165,6 +1242,7 @@
                     case ']':
                     case 'd':
                     case 'D':
+                    case '.':
                     case 'ArrowRight':
                         e.preventDefault();
                         handlePaddlePress('right', false);
