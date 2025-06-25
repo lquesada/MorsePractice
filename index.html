@@ -603,7 +603,7 @@
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
 
-            osc.type = "square"; 
+            osc.type = "triangle"; 
             osc.frequency.setValueAtTime(settings.tone, now);
             gain.gain.setValueAtTime(settings.vol / 100, now);
 
