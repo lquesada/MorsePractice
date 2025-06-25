@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Morse Code Trainer</title>
     <style>
         /* Fullscreen overlay styles */
@@ -42,6 +42,10 @@
             display: flex;
             flex-direction: column;
             touch-action: manipulation;
+            min-height: 0;
+            -ms-touch-action: manipulation;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .controls {
@@ -120,8 +124,8 @@
         }
 
         .output {
-            flex: 1;
-            min-height: 200px;
+            flex: 1 1 50px; /* grow, shrink, basis */
+            min-height: 50px;
             padding: 20px;
             background: #000;
             color: #0f0;
@@ -134,7 +138,8 @@
         }
 
         .buttons {
-            min-height: 300px;
+            min-height: 200px;
+            flex-shrink: 1;
             display: flex;
             background: #2a2a2a;
             user-select: none;
@@ -152,6 +157,99 @@
             border-radius: 4px;
             font-size: 12px;
             transition: all 0.2s;
+        }
+
+        .show-table-btn {
+            padding: 8px 16px;
+            border: 2px solid #555;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .show-table-btn.active {
+            background: #007acc;
+            border-color: #007acc;
+        }
+
+        .table-container {
+            display: none;
+            max-height: 720px;
+            flex-shrink: 1;
+            padding: 10px;
+            background: #111;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+        }
+
+        .table-container.visible {
+            display: block;
+        }
+
+        .morse-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 0;
+            justify-content: center;
+        }
+
+        .morse-section {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .morse-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .morse-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 55px;
+            height: 55px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .morse-char {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .morse-code {
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+            line-height: 1;
         }
 
         .paddle {
@@ -236,11 +334,15 @@
                 font-size: 28px;
                 padding: 15px;
             }
-            
-            .buttons {
-                height: 180px;
+        }
+
+        @media (max-height: 1200px) {
+            .table-container {
+                max-height: calc(100vh - 480px) !important;
+                min-height: 80px !important;
             }
         }
+
     </style>
 </head>
 <body>
@@ -258,36 +360,23 @@
         
     <div class="controls">
         <div class="control-group">
-            <button id="clear-output-btn" class="utility-btn">Clear</button>
-        </div>
-
-        <div class="control-group">
             <label>Key:</label>
             <div class="mode-buttons">
                 <button class="mode-btn" data-mode="straight">Straight</button>
                 <button class="mode-btn" data-mode="iambic-a">Iambic A</button>
                 <button class="mode-btn" data-mode="iambic-b">Iambic B</button>
             </div>
-        </div>
         
-        <div class="control-group">
-            <label>WPM:</label>
-            <div class="slider-container">
-                <div class="slider" id="wpm-slider">
-                    <div class="slider-thumb"></div>
-                </div>
-                <div class="slider-value" id="wpm-value">15</div>
-            </div>
         </div>
-        
         <div class="control-group">
-            <label>Polarity:</label>
+            <label>Dit:</label>
             <div class="mode-buttons">
-                <button class="polarity-btn" data-polarity="normal">Normal</button>
-                <button class="polarity-btn" data-polarity="inverse">Inverse</button>
+                <button class="polarity-btn" data-polarity="normal">Left</button>
+                <button class="polarity-btn" data-polarity="inverse">Right</button>
             </div>
         </div>
 
+        
         <div class="control-group">
             <label>Vol:</label>
             <div class="slider-container">
@@ -307,9 +396,95 @@
                 <div class="slider-value" id="tone-value">700</div>
             </div>
         </div>
+
+        <div class="control-group">
+            <label>WPM:</label>
+            <div class="slider-container">
+                <div class="slider" id="wpm-slider">
+                    <div class="slider-thumb"></div>
+                </div>
+                <div class="slider-value" id="wpm-value">15</div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <button id="clear-output-btn" class="utility-btn">Clear</button>
+        </div>
+
+        <div class="control-group">
+            <button id="show-table-btn" class="show-table-btn">Table</button>
+        </div>
+
     </div>
     
     <div class="output" id="output"></div>
+    
+    <div class="table-container" id="table-container">
+        <div class="morse-grid">
+            <div class="morse-section">
+                <div class="section-title">LETTERS</div>
+                <div class="morse-item"><div class="morse-char">A</div><div class="morse-code">.-</div></div>
+                <div class="morse-item"><div class="morse-char">B</div><div class="morse-code">-...</div></div>
+                <div class="morse-item"><div class="morse-char">C</div><div class="morse-code">-.-.</div></div>
+                <div class="morse-item"><div class="morse-char">D</div><div class="morse-code">-..</div></div>
+                <div class="morse-item"><div class="morse-char">E</div><div class="morse-code">.</div></div>
+                <div class="morse-item"><div class="morse-char">F</div><div class="morse-code">..-.</div></div>
+                <div class="morse-item"><div class="morse-char">G</div><div class="morse-code">--.</div></div>
+                <div class="morse-item"><div class="morse-char">H</div><div class="morse-code">....</div></div>
+                <div class="morse-item"><div class="morse-char">I</div><div class="morse-code">..</div></div>
+                <div class="morse-item"><div class="morse-char">J</div><div class="morse-code">.---</div></div>
+                <div class="morse-item"><div class="morse-char">K</div><div class="morse-code">-.-</div></div>
+                <div class="morse-item"><div class="morse-char">L</div><div class="morse-code">.-..</div></div>
+                <div class="morse-item"><div class="morse-char">M</div><div class="morse-code">--</div></div>
+                <div class="morse-item"><div class="morse-char">N</div><div class="morse-code">-.</div></div>
+                <div class="morse-item"><div class="morse-char">O</div><div class="morse-code">---</div></div>
+                <div class="morse-item"><div class="morse-char">P</div><div class="morse-code">.--.</div></div>
+                <div class="morse-item"><div class="morse-char">Q</div><div class="morse-code">--.-</div></div>
+                <div class="morse-item"><div class="morse-char">R</div><div class="morse-code">.-.</div></div>
+                <div class="morse-item"><div class="morse-char">S</div><div class="morse-code">...</div></div>
+                <div class="morse-item"><div class="morse-char">T</div><div class="morse-code">-</div></div>
+                <div class="morse-item"><div class="morse-char">U</div><div class="morse-code">..-</div></div>
+                <div class="morse-item"><div class="morse-char">V</div><div class="morse-code">...-</div></div>
+                <div class="morse-item"><div class="morse-char">W</div><div class="morse-code">.--</div></div>
+                <div class="morse-item"><div class="morse-char">X</div><div class="morse-code">-..-</div></div>
+                <div class="morse-item"><div class="morse-char">Y</div><div class="morse-code">-.--</div></div>
+                <div class="morse-item"><div class="morse-char">Z</div><div class="morse-code">.--.</div></div>
+            </div>
+            
+            <div class="morse-section">
+                <div class="section-title">NUMBERS</div>
+                <div class="morse-item"><div class="morse-char">0</div><div class="morse-code">-----</div></div>
+                <div class="morse-item"><div class="morse-char">1</div><div class="morse-code">.----</div></div>
+                <div class="morse-item"><div class="morse-char">2</div><div class="morse-code">..---</div></div>
+                <div class="morse-item"><div class="morse-char">3</div><div class="morse-code">...--</div></div>
+                <div class="morse-item"><div class="morse-char">4</div><div class="morse-code">....-</div></div>
+                <div class="morse-item"><div class="morse-char">5</div><div class="morse-code">.....</div></div>
+                <div class="morse-item"><div class="morse-char">6</div><div class="morse-code">-....</div></div>
+                <div class="morse-item"><div class="morse-char">7</div><div class="morse-code">--...</div></div>
+                <div class="morse-item"><div class="morse-char">8</div><div class="morse-code">---..</div></div>
+                <div class="morse-item"><div class="morse-char">9</div><div class="morse-code">----.</div></div>
+            </div>
+            
+            <div class="morse-section">
+                <div class="section-title">SYMBOLS</div>
+                <div class="morse-item"><div class="morse-char">?</div><div class="morse-code">..--..</div></div>
+                <div class="morse-item"><div class="morse-char">!</div><div class="morse-code">-.-.--</div></div>
+                <div class="morse-item"><div class="morse-char">.</div><div class="morse-code">.-.-.-</div></div>
+                <div class="morse-item"><div class="morse-char">:</div><div class="morse-code">---...</div></div>
+                <div class="morse-item"><div class="morse-char">;</div><div class="morse-code">-.-.-.</div></div>
+                <div class="morse-item"><div class="morse-char">=</div><div class="morse-code">-...-</div></div>
+                <div class="morse-item"><div class="morse-char">/</div><div class="morse-code">-..-.</div></div>
+                <div class="morse-item"><div class="morse-char">@</div><div class="morse-code">.--.-.</div></div>
+                <div class="morse-item"><div class="morse-char">'</div><div class="morse-code">.----.</div></div>
+                <div class="morse-item"><div class="morse-char">-</div><div class="morse-code">-....-</div></div>
+                <div class="morse-item"><div class="morse-char">,</div><div class="morse-code">--.-..</div></div>
+                <div class="morse-item"><div class="morse-char">"</div><div class="morse-code">.-..-.</div></div>
+                <div class="morse-item"><div class="morse-char">+</div><div class="morse-code">.-.-.</div></div>
+                <div class="morse-item"><div class="morse-char">(</div><div class="morse-code">-.--.</div></div>
+                <div class="morse-item"><div class="morse-char">)</div><div class="morse-code">-.--.-</div></div>
+            </div>
+        </div>
+    </div>
     
     <div class="buttons" id="buttons">
         <button class="paddle left" id="left-paddle">tap or [ or A or left arrow</button>
@@ -355,7 +530,8 @@
                         wpm: parsed.wpm || 15,
                         vol: parsed.vol || 40,
                         tone: parsed.tone || 700,
-                        polarity: parsed.polarity || 'normal'
+                        polarity: parsed.polarity || 'normal',
+                        showTable: parsed.showTable || false
                     };
                 }
             } catch (e) {
@@ -367,7 +543,8 @@
                 wpm: 15,
                 vol: 40,
                 tone: 700,
-                polarity: 'normal'
+                polarity: 'normal',
+                showTable: false
             };
         }
 
@@ -869,6 +1046,31 @@
             }
         }
 
+        function setupTableToggle() {
+            const tableBtn = document.getElementById('show-table-btn');
+            const tableContainer = document.getElementById('table-container');
+            const buttonsContainer = document.getElementById('buttons');
+            
+            function updateTableDisplay() {
+                if (settings.showTable) {
+                    tableBtn.classList.add('active');
+                    tableContainer.classList.add('visible');
+                } else {
+                    tableBtn.classList.remove('active');
+                    tableContainer.classList.remove('visible');
+                }
+            }
+            
+            tableBtn.addEventListener('click', () => {
+                settings.showTable = !settings.showTable;
+                saveSettings();
+                updateTableDisplay();
+            });
+            
+            // Set initial state
+            updateTableDisplay();
+        }
+   
         // Setup event listeners
         function setupEventListeners() {
             const leftPaddle = document.getElementById('left-paddle');
@@ -994,7 +1196,45 @@
                 closeOverlay();
             }
             
+            // Prevent zoom on touch devices
+            let lastTouchEnd = 0;
+
+            // Prevent double-tap zoom
+            document.addEventListener('touchend', function (event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+            
+            // More aggressive zoom prevention
+            document.addEventListener('gesturestart', function (e) {
+                e.preventDefault();
+            });
+            
+            document.addEventListener('gesturechange', function (e) {
+                e.preventDefault();
+            });
+            
+            document.addEventListener('gestureend', function (e) {
+                e.preventDefault();
+            });
+
             document.body.addEventListener('touchmove', (e) => {
+                // If it's a multi-touch gesture (pinch), prevent it
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                    return;
+                }
+                
+                // Allow scrolling in the table container for single touch
+                if (e.target.closest('.table-container')) {
+                    // Let the table container handle its own scrolling
+                    return;
+                }
+                
+                // Prevent other touch moves (like pulling to refresh)
                 e.preventDefault();
             }, { passive: false });
 
@@ -1011,6 +1251,7 @@
 
             setupSliders();
             setupModeButtons();
+            setupTableToggle();
             setupEventListeners();
         }
 
