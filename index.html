@@ -862,9 +862,14 @@
             morseState.isTransmitting = true;
             morseState.lastElement = elementToSend;
 
-            // Reset flags after decision
-            paddleState.leftPressedDuringElement = false;
-            paddleState.rightPressedDuringElement = false;
+            // Reset flags after decision, keep memory in iambic B
+            if (settings.mode == "iambic-b") {
+                paddleState.leftPressedDuringElement = paddleState.leftCurrentlyPressed;
+                paddleState.rightPressedDuringElement = paddleState.rightCurrentlyPressed;
+            } else if (settings.mode == "iambic-a") {
+                paddleState.leftPressedDuringElement = false;
+                paddleState.rightPressedDuringElement = false;
+            }
             paddleState.squeezePressedDuringElement = paddleState.squeezeCurrentlyPressed;
 
             playTone();
