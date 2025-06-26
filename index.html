@@ -377,7 +377,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.18
+            version 1.19
         </div>
     </div>
 
@@ -860,7 +860,7 @@
                 return;
             }
             
-            console.log("LC", paddleState.leftCurrentlyPressed, "RC", paddleState.rightCurrentlyPressed, "SC", paddleState.squeezeCurrentlyPressed, "LD", paddleState.leftPressedDuringElement, "RD", paddleState.rightPressedDuringElement, "SD", paddleState.squeezePressedDuringElement, "NE", elementToSend, "PR", morseState.lastElement, "TR", morseState.isTransmitting);
+            //console.log("LC", paddleState.leftCurrentlyPressed, "RC", paddleState.rightCurrentlyPressed, "SC", paddleState.squeezeCurrentlyPressed, "LD", paddleState.leftPressedDuringElement, "RD", paddleState.rightPressedDuringElement, "SD", paddleState.squeezePressedDuringElement, "NE", elementToSend, "PR", morseState.lastElement, "TR", morseState.isTransmitting);
 
             // Send the element
             morseState.isTransmitting = true;
@@ -1247,11 +1247,11 @@
                         break;
                 }
                 // VBand Adapter support
-                if (e.key == 'Control') {
-                    if (e.code == 'ControlLeft') {
+                if (e.key === 'Control') {
+                    if (e.code === 'ControlLeft') {
                         e.preventDefault();
                         handlePaddlePress('left', true);
-                    } else if (e.code == 'ControlRight') {
+                    } else if (e.code === 'ControlRight') {
                         e.preventDefault();
                         handlePaddlePress('right', true);
                     }
@@ -1278,11 +1278,11 @@
                         break;
                 }
                 // VBand Adapter support
-                if (e.key == 'Control') {
-                    if (e.code == 'ControlLeft') {
+                if (e.key === 'Control') {
+                    if (e.code === 'ControlLeft') {
                         e.preventDefault();
                         handlePaddlePress('left', false);
-                    } else if (e.code == 'ControlRight') {
+                    } else if (e.code === 'ControlRight') {
                         e.preventDefault();
                         handlePaddlePress('right', false);
                     }
@@ -1316,7 +1316,7 @@
             }
 
             function handleOverlayKeydown(e) {
-                if (e.key == 'Control' || !e.isTrusted) {
+                if (e.key === 'Control' || !e.isTrusted) {
                     return;
                 }
                 // Close overlay on any key press
