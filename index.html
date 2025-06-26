@@ -838,10 +838,12 @@
             // Decide what to send based on current state
             let elementToSend = '';
             
-            if (squeezeActive ||
-               (morseState.lastElement == '.' && paddleState.leftCurrentlyPressed && paddleState.rightPressedDuringElement) ||
-               (morseState.lastElement == '-' && paddleState.rightCurrentlyPressed && paddleState.leftPressedDuringElement)
-            ) {
+            if (squeezeActive || (
+               (settings.polarity === 'normal' && morseState.lastElement === '.' && paddleState.leftCurrentlyPressed && paddleState.rightPressedDuringElement) ||
+               (settings.polarity === 'normal' && morseState.lastElement === '-' && paddleState.rightCurrentlyPressed && paddleState.leftPressedDuringElement) ||
+               (settings.polarity === 'inverse' && morseState.lastElement === '.' && paddleState.rightCurrentlyPressed && paddleState.leftPressedDuringElement) ||
+               (settings.polarity === 'inverse' && morseState.lastElement === '-' && paddleState.leftCurrentlyPressed && paddleState.rightPressedDuringElement)
+            )) {
                 // Both are active (squeeze) - alternate
                 elementToSend = (morseState.lastElement === '.') ? '-' : '.';
             } else if (leftActive) {
@@ -858,20 +860,29 @@
                 return;
             }
             
-            //console.log("LC", paddleState.leftCurrentlyPressed, "RC", paddleState.rightCurrentlyPressed, "SC", paddleState.squeezeCurrentlyPressed, "LD", paddleState.leftPressedDuringElement, "RD", paddleState.rightPressedDuringElement, "SD", paddleState.squeezePressedDuringElement, "NE", elementToSend, "PR", morseState.lastElement)
+            console.log("LC", paddleState.leftCurrentlyPressed, "RC", paddleState.rightCurrentlyPressed, "SC", paddleState.squeezeCurrentlyPressed, "LD", paddleState.leftPressedDuringElement, "RD", paddleState.rightPressedDuringElement, "SD", paddleState.squeezePressedDuringElement, "NE", elementToSend, "PR", morseState.lastElement, "TR", morseState.isTransmitting);
 
             // Send the element
             morseState.isTransmitting = true;
             morseState.lastElement = elementToSend;
 
-            // Reset flags after decision, keep memory in iambic B
-            //if (settings.mode == "iambic-b") {
-            //    paddleState.leftPressedDuringElement = paddleState.leftCurrentlyPressed;
-            //    paddleState.rightPressedDuringElement = paddleState.rightCurrentlyPressed;
-            //} else if (settings.mode == "iambic-a") {
+            if (settings.mode === 'iambic-a') {
                 paddleState.leftPressedDuringElement = false;
                 paddleState.rightPressedDuringElement = false;
-            //}
+            }
+            if (settings.mode === 'iambic-b') {
+                if (settings.polarity === 'normal' && morseState.lastElement === '.' || settings.polarity === 'inverse' && morseState.lastElement === '-') {
+                    paddleState.leftPressedDuringElement = false;
+                } else {
+                    paddleState.leftPressedDuringElement = paddleState.leftCurrentlyPressed;
+                }
+                if (settings.polarity === 'normal' && morseState.lastElement === '-' || settings.polarity === 'inverse' && morseState.lastElement === '.') {
+                    paddleState.rightPressedDuringElement = false;
+                } else {
+                    paddleState.rightPressedDuringElement = paddleState.rightCurrentlyPressed;
+                }
+            }
+
             paddleState.squeezePressedDuringElement = paddleState.squeezeCurrentlyPressed;
 
             playTone();
