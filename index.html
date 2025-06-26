@@ -370,12 +370,12 @@
     <div id="start-overlay">
         <div class="openline">Morse Practice</div>
         <div class="openline">[Click to Start]</div>
-        <div class="instructions">Supported inputs: keyboard, touch screen, mouse, or a paddle with usb adapter.<br/><br/>For mouse only keying, leave the mouse pointer above the left app button - left clicks will trigger the left paddle, right clicks will trigger the right paddle.<br/><br/>For an USB-to-keyboard paddle adapter, map it to any of the supported keys.<br/><br/>For an USB-to-mouse paddle adapter, leave the mouse pointer above the left app button and use the paddle key - tapping the right paddle will map to a right mouse click on the left button, which will trigger the app right button.</div>
+        <div class="instructions">Supported inputs: keyboard, touch screen, mouse, or a paddle with usb adapter.<br/><br/>For mouse only keying, leave the mouse pointer above the left app button - left clicks will trigger the left paddle, right clicks will trigger the right paddle.<br/><br/>For an USB-to-keyboard paddle adapter it works out of the box (e.g. tested with VBand) - let me know if it doesn't.<br/><br/>For an USB-to-mouse paddle adapter, leave the mouse pointer above the left app button and use the paddle key - tapping the right paddle will map to a right mouse click on the left button, which will trigger the app right button.</div>
         <div class="credit" id="credit">
-            Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://www.luisquesada.com">www.luisquesada.com</a>
+            Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.16
+            version 1.17
         </div>
     </div>
 
@@ -773,6 +773,7 @@
         };
 
         function handlePaddlePress(side, isPressed) {
+            if (overlayActive) return;
             const paddle = document.getElementById(side + '-paddle');
             
             if (isPressed) {
@@ -1227,6 +1228,16 @@
                         handlePaddlePress('right', true);
                         break;
                 }
+                // VBand Adapter support
+                if (e.key == 'Control') {
+                    if (e.code == 'ControlLeft') {
+                        e.preventDefault();
+                        handlePaddlePress('left', true);
+                    } else if (e.code == 'ControlRight') {
+                        e.preventDefault();
+                        handlePaddlePress('right', true);
+                    }
+                }
             });
 
             document.addEventListener('keyup', (e) => {
@@ -1248,8 +1259,20 @@
                         handlePaddlePress('right', false);
                         break;
                 }
+                // VBand Adapter support
+                if (e.key == 'Control') {
+                    if (e.code == 'ControlLeft') {
+                        e.preventDefault();
+                        handlePaddlePress('left', false);
+                    } else if (e.code == 'ControlRight') {
+                        e.preventDefault();
+                        handlePaddlePress('right', false);
+                    }
+                }
             });
         }
+
+        let overlayActive = true;
 
         function init() {
             settings = loadSettings();
@@ -1261,6 +1284,7 @@
             const startOverlay = document.getElementById('start-overlay');
             
             function closeOverlay() {
+                overlayActive = false;
                 if (!audioInitialized) {
                     initAudio();
                 }
@@ -1274,6 +1298,9 @@
             }
 
             function handleOverlayKeydown(e) {
+                if (e.key == 'Control' || !e.isTrusted) {
+                    return;
+                }
                 // Close overlay on any key press
                 e.preventDefault();
                 e.stopImmediatePropagation();  // <-- This line stops the event from reaching other listeners
