@@ -377,7 +377,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.19
+            version 1.20
         </div>
     </div>
 
@@ -766,10 +766,10 @@
         }
 
         let paddleState = {
-            leftCurrentlyPressed: false,
-            rightCurrentlyPressed: false,
-            leftPressedDuringElement: false,
-            rightPressedDuringElement: false,
+            ditCurrentlyPressed: false,
+            dahCurrentlyPressed: false,
+            ditPressedDuringElement: false,
+            dahPressedDuringElement: false,
             squeezeCurrentlyPressed: false,
             squeezePressedDuringElement: false
         };
@@ -781,27 +781,49 @@
             if (isPressed) {
                 paddle.classList.add('pressed');
                 if (side === 'left') {
-                    paddleState.leftCurrentlyPressed = true;
-                    if (morseState.isTransmitting || morseState.iambicScheduled) {
-                        paddleState.leftPressedDuringElement = true;
+                    if (settings.polarity === 'normal') {
+                        paddleState.ditCurrentlyPressed = true;
+                        if (morseState.isTransmitting || morseState.iambicScheduled) {
+                            paddleState.ditPressedDuringElement = true;
+                        }
+                    } else {
+                        paddleState.dahCurrentlyPressed = true;
+                        if (morseState.isTransmitting || morseState.iambicScheduled) {
+                            paddleState.dahPressedDuringElement = true;
+                        }
                     }
                 } else {
-                    paddleState.rightCurrentlyPressed = true;
-                    if (morseState.isTransmitting || morseState.iambicScheduled) {
-                        paddleState.rightPressedDuringElement = true;
+                    if (settings.polarity === 'normal') {
+                        paddleState.dahCurrentlyPressed = true;
+                        if (morseState.isTransmitting || morseState.iambicScheduled) {
+                            paddleState.dahPressedDuringElement = true;
+                        }
+                    } else {
+                        paddleState.ditCurrentlyPressed = true;
+                        if (morseState.isTransmitting || morseState.iambicScheduled) {
+                            paddleState.ditPressedDuringElement = true;
+                        }
                     }
                 }
             } else {
                 paddle.classList.remove('pressed');
                 if (side === 'left') {
-                    paddleState.leftCurrentlyPressed = false;
+                    if (settings.polarity === 'normal') {
+                        paddleState.ditCurrentlyPressed = false;
+                    } else {
+                        paddleState.dahCurrentlyPressed = false;
+                    }
                 } else {
-                    paddleState.rightCurrentlyPressed = false;
+                    if (settings.polarity === 'normal') {
+                        paddleState.dahCurrentlyPressed = false;
+                    } else {
+                        paddleState.ditCurrentlyPressed = false;
+                    }
                 }
             }
             
             // Update squeeze state
-            paddleState.squeezeCurrentlyPressed = paddleState.leftCurrentlyPressed && paddleState.rightCurrentlyPressed;
+            paddleState.squeezeCurrentlyPressed = paddleState.ditCurrentlyPressed && paddleState.dahCurrentlyPressed;
             if (paddleState.squeezeCurrentlyPressed && morseState.isTransmitting) {
                 paddleState.squeezePressedDuringElement = true;
             }
@@ -823,7 +845,7 @@
             clearTimingTimeouts();
             
             // Different logic for Iambic A vs Iambic B
-            let leftActive, rightActive;
+            let ditActive, dahActive;
             
             if (settings.mode === 'iambic-a') {
                 // Iambic A: only check what's currently pressed (squeeze must be held)
@@ -832,26 +854,24 @@
                 // Iambic B: check if pressed during element OR currently pressed
                 squeezeActive = paddleState.squeezeCurrentlyPressed || paddleState.squeezePressedDuringElement;
             }
-            leftActive = paddleState.leftCurrentlyPressed || paddleState.leftPressedDuringElement;
-            rightActive = paddleState.rightCurrentlyPressed || paddleState.rightPressedDuringElement;
+            ditActive = paddleState.ditCurrentlyPressed || paddleState.ditPressedDuringElement;
+            dahActive = paddleState.dahCurrentlyPressed || paddleState.dahPressedDuringElement;
 
             // Decide what to send based on current state
             let elementToSend = '';
             
             if (squeezeActive || (
-               (settings.polarity === 'normal' && morseState.lastElement === '.' && paddleState.leftCurrentlyPressed && paddleState.rightPressedDuringElement) ||
-               (settings.polarity === 'normal' && morseState.lastElement === '-' && paddleState.rightCurrentlyPressed && paddleState.leftPressedDuringElement) ||
-               (settings.polarity === 'inverse' && morseState.lastElement === '.' && paddleState.rightCurrentlyPressed && paddleState.leftPressedDuringElement) ||
-               (settings.polarity === 'inverse' && morseState.lastElement === '-' && paddleState.leftCurrentlyPressed && paddleState.rightPressedDuringElement)
+               (morseState.lastElement === '.' && paddleState.ditCurrentlyPressed && paddleState.dahPressedDuringElement) ||
+               (morseState.lastElement === '-' && paddleState.dahCurrentlyPressed && paddleState.ditPressedDuringElement)
             )) {
                 // Both are active (squeeze) - alternate
                 elementToSend = (morseState.lastElement === '.') ? '-' : '.';
-            } else if (leftActive) {
-                // Only left is active
-                elementToSend = (settings.polarity === 'normal') ? '.' : '-';
-            } else if (rightActive) {
-                // Only right is active
-                elementToSend = (settings.polarity === 'normal') ? '-' : '.';
+            } else if (ditActive) {
+                // Only dit is active
+                elementToSend = '.';
+            } else if (dahActive) {
+                // Only dah is active
+                elementToSend = '-';
             } else {
                 // Nothing to send
                 if (morseState.currentCode) {
@@ -860,26 +880,26 @@
                 return;
             }
             
-            //console.log("LC", paddleState.leftCurrentlyPressed, "RC", paddleState.rightCurrentlyPressed, "SC", paddleState.squeezeCurrentlyPressed, "LD", paddleState.leftPressedDuringElement, "RD", paddleState.rightPressedDuringElement, "SD", paddleState.squeezePressedDuringElement, "NE", elementToSend, "PR", morseState.lastElement, "TR", morseState.isTransmitting);
+            //console.log(".C", paddleState.ditCurrentlyPressed, "-C", paddleState.dahCurrentlyPressed, "SC", paddleState.squeezeCurrentlyPressed, ".D", paddleState.ditPressedDuringElement, "-D", paddleState.dahPressedDuringElement, "SD", paddleState.squeezePressedDuringElement, "NE", elementToSend, "PR", morseState.lastElement, "TR", morseState.isTransmitting);
 
             // Send the element
             morseState.isTransmitting = true;
             morseState.lastElement = elementToSend;
 
             if (settings.mode === 'iambic-a') {
-                paddleState.leftPressedDuringElement = false;
-                paddleState.rightPressedDuringElement = false;
+                paddleState.ditPressedDuringElement = false;
+                paddleState.dahPressedDuringElement = false;
             }
             if (settings.mode === 'iambic-b') {
-                if (settings.polarity === 'normal' && morseState.lastElement === '.' || settings.polarity === 'inverse' && morseState.lastElement === '-') {
-                    paddleState.leftPressedDuringElement = false;
+                if (morseState.lastElement === '.') {
+                    paddleState.ditPressedDuringElement = false;
                 } else {
-                    paddleState.leftPressedDuringElement = paddleState.leftCurrentlyPressed;
+                    paddleState.ditPressedDuringElement = paddleState.ditCurrentlyPressed;
                 }
-                if (settings.polarity === 'normal' && morseState.lastElement === '-' || settings.polarity === 'inverse' && morseState.lastElement === '.') {
-                    paddleState.rightPressedDuringElement = false;
+                if (morseState.lastElement === '-') {
+                    paddleState.dahPressedDuringElement = false;
                 } else {
-                    paddleState.rightPressedDuringElement = paddleState.rightCurrentlyPressed;
+                    paddleState.dahPressedDuringElement = paddleState.dahCurrentlyPressed;
                 }
             }
 
