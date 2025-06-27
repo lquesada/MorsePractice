@@ -378,7 +378,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.21
+            version 1.22
         </div>
     </div>
 
@@ -610,7 +610,12 @@
             if (audioInitialized) return;
             audioInitialized = true;
             try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const contextOptions = {
+                    latencyHint: 'interactive',
+                    sampleRate: 44100 // explicit sample rate
+                };
+            
+                audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
                 
                 // Create persistent nodes
                 masterOscillator = audioContext.createOscillator();
