@@ -126,6 +126,44 @@
             font-weight: bold;
         }
 
+        .wpm-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .wpm-btn {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: 2px solid #555;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wpm-btn:hover {
+            background: #444;
+        }
+
+        .wpm-btn:active {
+            background: #007acc;
+        }
+
+        .wpm-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
         .output {
             flex: 1 1 50px; /* grow, shrink, basis */
             min-height: 50px;
@@ -231,8 +269,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
+            width: 52px;
+            height: 52px;
             background: #333;
             border: 1px solid #555;
             border-radius: 4px;
@@ -248,7 +286,7 @@
         }
 
         .morse-code {
-            font-size: 12px;
+            font-size: 11px;
             color: #ddd;
             text-align: center;
             line-height: 1;
@@ -378,7 +416,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.23
+            version 1.24
         </div>
     </div>
 
@@ -403,11 +441,10 @@
 
         <div class="control-group">
             <label>WPM:</label>
-            <div class="slider-container">
-                <div class="slider" id="wpm-slider">
-                    <div class="slider-thumb"></div>
-                </div>
-                <div class="slider-value" id="wpm-value">15</div>
+            <div class="wpm-controls">
+                <button class="wpm-btn" id="wpm-minus">-</button>
+                <div class="wpm-value" id="wpm-value">15</div>
+                <button class="wpm-btn" id="wpm-plus">+</button>
             </div>
         </div>
         
@@ -481,7 +518,7 @@
                 <div class="morse-item"><div class="morse-char">W</div><div class="morse-code">.--</div></div>
                 <div class="morse-item"><div class="morse-char">X</div><div class="morse-code">-..-</div></div>
                 <div class="morse-item"><div class="morse-char">Y</div><div class="morse-code">-.--</div></div>
-                <div class="morse-item"><div class="morse-char">Z</div><div class="morse-code">.--.</div></div>
+                <div class="morse-item"><div class="morse-char">Z</div><div class="morse-code">--..</div></div>
             </div>
             
             <div class="morse-section">
@@ -953,10 +990,6 @@
 
         // Setup sliders
         function setupSliders() {
-            const wpmSlider = document.getElementById('wpm-slider');
-            const wpmThumb = wpmSlider.querySelector('.slider-thumb');
-            const wpmValue = document.getElementById('wpm-value');
-            
             const volSlider = document.getElementById('vol-slider');
             const volThumb = volSlider.querySelector('.slider-thumb');
             const volValue = document.getElementById('vol-value');
@@ -1008,11 +1041,6 @@
                 document.addEventListener('touchend', () => isDragging = false);
             }
             
-            updateSlider(wpmSlider, wpmThumb, wpmValue, 5, 60, settings.wpm, (value) => {
-                settings.wpm = value;
-                saveSettings();
-            });
-            
             updateSlider(volSlider, volThumb, volValue, 0, 100, settings.vol, (value) => {
                 settings.vol = value;
                 saveSettings();
@@ -1025,6 +1053,60 @@
                 }
                 saveSettings();
             });
+        }
+
+        function setupWpmButtons() {
+            const wpmMinus = document.getElementById('wpm-minus');
+            const wpmPlus = document.getElementById('wpm-plus');
+            const wpmValue = document.getElementById('wpm-value');
+            
+            let holdTimeout;
+            let holdInterval;
+            
+            function updateWpm(delta) {
+                settings.wpm = Math.max(5, Math.min(60, settings.wpm + delta));
+                wpmValue.textContent = settings.wpm;
+                saveSettings();
+            }
+            
+            function startHold(delta) {
+                updateWpm(delta);
+                holdTimeout = setTimeout(() => {
+                    holdInterval = setInterval(() => {
+                        updateWpm(delta);
+                    }, 120);
+                }, 180);
+            }
+            
+            function stopHold() {
+                clearTimeout(holdTimeout);
+                clearInterval(holdInterval);
+            }
+            
+            // Set initial value
+            wpmValue.textContent = settings.wpm;
+            
+            // Minus button
+            wpmMinus.addEventListener('mousedown', () => startHold(-1));
+            wpmMinus.addEventListener('mouseup', stopHold);
+            wpmMinus.addEventListener('mouseleave', stopHold);
+            wpmMinus.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startHold(-1);
+            });
+            wpmMinus.addEventListener('touchend', stopHold);
+            wpmMinus.addEventListener('touchcancel', stopHold);
+            
+            // Plus button
+            wpmPlus.addEventListener('mousedown', () => startHold(1));
+            wpmPlus.addEventListener('mouseup', stopHold);
+            wpmPlus.addEventListener('mouseleave', stopHold);
+            wpmPlus.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startHold(1);
+            });
+            wpmPlus.addEventListener('touchend', stopHold);
+            wpmPlus.addEventListener('touchcancel', stopHold);
         }
 
         // Setup mode buttons
@@ -1290,8 +1372,12 @@
                 }
             });
 
-            // Prevent context menu from appearing anywhere
-            document.addEventListener('contextmenu', (e) => {
+            // Handle context menu events (right-click)
+            leftPaddle.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            rightPaddle.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
             });
 
@@ -1448,6 +1534,7 @@
             });
 
             setupSliders();
+            setupWpmButtons();
             setupModeButtons();
             setupTableToggle();
             setupEventListeners();
