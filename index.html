@@ -427,7 +427,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.26
+            version 1.27
         </div>
     </div>
 
@@ -980,23 +980,26 @@
 
             paddleState.squeezePressedDuringElement = paddleState.squeezeCurrentlyPressed;
 
+            const duration = (elementToSend === '.') ? timings.dit : timings.dah;
+            const nextElementStartTime = Date.now() + duration + timings.elementGap;
+
             playTone();
 
-            const duration = (elementToSend === '.') ? timings.dit : timings.dah;
+            // Stop the current tone after its duration
             setTimeout(() => {
                 stopTone();
                 morseState.isTransmitting = false;
                 morseState.currentCode += elementToSend;
                 morseState.lastElementTime = Date.now();
-                
-                // Schedule next element check after element gap
-                morseState.iambicScheduled = true;
-                setTimeout(() => {
-                    morseState.iambicScheduled = false;
-                    handleIambic();
-                }, timings.elementGap);
-                
             }, duration);
+
+            // Schedule next element to start at the correct time
+            morseState.iambicScheduled = true;
+            setTimeout(() => {
+                morseState.iambicScheduled = false;
+                handleIambic();
+            }, duration + timings.elementGap);
+
         }
 
         // Setup sliders
