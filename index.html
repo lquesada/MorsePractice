@@ -416,7 +416,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.24
+            version 1.25
         </div>
     </div>
 
@@ -657,6 +657,7 @@
         function initAudio() {
             if (audioInitialized) return;
             audioInitialized = true;
+
             try {
                 const contextOptions = {
                     latencyHint: 'interactive',
@@ -664,19 +665,6 @@
                 };
             
                 audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
-                
-                // Create persistent nodes
-                masterOscillator = audioContext.createOscillator();
-                masterGain = audioContext.createGain();
-                
-                masterOscillator.type = settings.toneType;
-                masterOscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
-                masterGain.gain.setValueAtTime(0, audioContext.currentTime); // Start silent
-                
-                masterOscillator.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                masterOscillator.start(); // Start once and keep running
-                
                 audioReady = true;
             } catch (e) {
                 console.error("Audio init failed:", e);
@@ -684,52 +672,56 @@
             }
         }
 
-        async function playTone(duration = null) {
+        function playTone(duration = null) {
             if (!audioContext || !audioReady) return;
-            
-            // Resume context if suspended (required for user interaction)
-            if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-            }
-            
+
             const now = audioContext.currentTime;
-            // Update oscillator type only if tone type changed
-            if (settings.toneType !== currentToneType) {
-                masterOscillator.type = settings.toneType;
-                currentToneType = settings.toneType;
-            }
-            
-            // Update frequency if needed
-            masterOscillator.frequency.setValueAtTime(settings.tone, now);
-            
-            // Fade in quickly to avoid clicks
-            masterGain.gain.cancelScheduledValues(now);
-            masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+
+            // Create a new oscillator and gain node
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.type = settings.toneType;
+            osc.frequency.setValueAtTime(settings.tone, now);
             let volDivider = 100;
             if (settings.toneType === 'sawtooth') {
                 volDivider = 250;
             }
-            masterGain.gain.linearRampToValueAtTime(settings.vol / volDivider, now + 0.01);
-            
-            isPlaying = true;
-            
+            gain.gain.setValueAtTime(settings.vol / volDivider, now);
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start(now);
+
             if (duration) {
-                // Schedule fade out
-                masterGain.gain.linearRampToValueAtTime(0, now + duration / 1000);
-                setTimeout(() => { isPlaying = false; }, duration);
+                osc.stop(now + duration / 1000);
             }
+
+            // Store for optional manual stopping
+            currentOscillator = osc;
+            currentGain = gain;
         }
 
         function stopTone() {
-            if (!audioContext || !audioReady || !isPlaying) return;
-            
-            const now = audioContext.currentTime;
-            // Quick fade out to avoid clicks
-            masterGain.gain.cancelScheduledValues(now);
-            masterGain.gain.setValueAtTime(masterGain.gain.value, now);
-            masterGain.gain.linearRampToValueAtTime(0, now + 0.01);
-            
-            isPlaying = false;
+            if (!audioContext || !audioReady) return;
+
+            if (currentGain) {
+                const now = audioContext.currentTime;
+                currentGain.gain.cancelScheduledValues(now);
+                currentGain.gain.setValueAtTime(0, now);
+            }
+
+            if (currentOscillator) {
+                try {
+                    currentOscillator.stop();
+                } catch (e) {
+                    // already stopped
+                }
+                currentOscillator.disconnect();
+                currentOscillator = null;
+                currentGain = null;
+            }
         }
 
         // Get timing values based on WPM
