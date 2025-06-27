@@ -378,7 +378,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.20
+            version 1.21
         </div>
     </div>
 
@@ -598,20 +598,32 @@
             iambicScheduled: false
         };
 
-
         // Audio
         let audioContext;
         let audioInitialized = false;
         let audioReady = false;
-        let currentOscillator = null;
-        let currentGain = null;
+        let masterOscillator = null;
+        let masterGain = null;
+        let isPlaying = false;
 
         function initAudio() {
             if (audioInitialized) return;
             audioInitialized = true;
-
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create persistent nodes
+                masterOscillator = audioContext.createOscillator();
+                masterGain = audioContext.createGain();
+                
+                masterOscillator.type = "triangle";
+                masterOscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
+                masterGain.gain.setValueAtTime(0, audioContext.currentTime); // Start silent
+                
+                masterOscillator.connect(masterGain);
+                masterGain.connect(audioContext.destination);
+                masterOscillator.start(); // Start once and keep running
+                
                 audioReady = true;
             } catch (e) {
                 console.error("Audio init failed:", e);
@@ -619,55 +631,44 @@
             }
         }
 
-        function playTone(duration = null) {
+        async function playTone(duration = null) {
             if (!audioContext || !audioReady) return;
-
-            const now = audioContext.currentTime;
-
-            // Create a new oscillator and gain node
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-
-            osc.type = "triangle"; 
-            osc.frequency.setValueAtTime(settings.tone, now);
-            gain.gain.setValueAtTime(settings.vol / 100, now);
-
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-
-            osc.start(now);
-
-            if (duration) {
-                osc.stop(now + duration / 1000);
+            
+            // Resume context if suspended (required for user interaction)
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
             }
-
-            // Store for optional manual stopping
-            currentOscillator = osc;
-            currentGain = gain;
+            
+            const now = audioContext.currentTime;
+            
+            // Update frequency if needed
+            masterOscillator.frequency.setValueAtTime(settings.tone, now);
+            
+            // Fade in quickly to avoid clicks
+            masterGain.gain.cancelScheduledValues(now);
+            masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+            masterGain.gain.linearRampToValueAtTime(settings.vol / 100, now + 0.01);
+            
+            isPlaying = true;
+            
+            if (duration) {
+                // Schedule fade out
+                masterGain.gain.linearRampToValueAtTime(0, now + duration / 1000);
+                setTimeout(() => { isPlaying = false; }, duration);
+            }
         }
 
         function stopTone() {
-            if (!audioContext || !audioReady) return;
-
-            if (currentGain) {
-                const now = audioContext.currentTime;
-                currentGain.gain.cancelScheduledValues(now);
-                currentGain.gain.setValueAtTime(0, now);
-            }
-
-            if (currentOscillator) {
-                try {
-                    currentOscillator.stop();
-                } catch (e) {
-                    // already stopped
-                }
-                currentOscillator.disconnect();
-                currentOscillator = null;
-                currentGain = null;
-            }
+            if (!audioContext || !audioReady || !isPlaying) return;
+            
+            const now = audioContext.currentTime;
+            // Quick fade out to avoid clicks
+            masterGain.gain.cancelScheduledValues(now);
+            masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+            masterGain.gain.linearRampToValueAtTime(0, now + 0.01);
+            
+            isPlaying = false;
         }
-
-
 
         // Get timing values based on WPM
         function getTimings() {
