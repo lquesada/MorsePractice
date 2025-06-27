@@ -78,7 +78,7 @@
             gap: 5px;
         }
 
-        .mode-btn, .polarity-btn {
+        .mode-btn, .polarity-btn, .tone-btn {
             padding: 8px 16px;
             border: 2px solid #555;
             background: #333;
@@ -89,7 +89,7 @@
             transition: all 0.2s;
         }
 
-        .mode-btn.active, .polarity-btn.active {
+        .mode-btn.active, .polarity-btn.active, .tone-btn.active {
             background: #007acc;
             border-color: #007acc;
         }
@@ -356,9 +356,9 @@
             }
         }
 
-        @media (max-height: 400px) {
+        @media (max-height: 500px) {
             .buttons {
-                min-height: calc(100vh - 180px) !important;
+                min-height: calc(100vh - 230px) !important;
             }
             .output {
                 max-height: 50px !important;
@@ -373,12 +373,12 @@
     <div id="start-overlay">
         <div class="openline">Morse Practice</div>
         <div class="openline">[Click to Start]</div>
-        <div class="instructions">Supported inputs: keyboard, touch screen, mouse, or a paddle with usb adapter.<br/><br/>For mouse only keying, leave the mouse pointer above the left app button - left clicks will trigger the left paddle, right clicks will trigger the right paddle.<br/><br/>For an USB-to-keyboard paddle adapter it works out of the box (e.g. tested with VBand) - let me know if it doesn't.<br/><br/>For an USB-to-mouse paddle adapter, leave the mouse pointer above the left app button and use the paddle key - tapping the right paddle will map to a right mouse click on the left button, which will trigger the app right button.</div>
+        <div class="instructions">Supported inputs: keyboard, touch screen, mouse, or a paddle with usb adapter.<br/><br/>For mouse left/right-click keying or USB-to-mouse paddle adapter, leave the mouse pointer above the left app button, left/right click or paddle will work.<br/><br/>For an USB-to-keyboard paddle adapter it works out of the box (e.g. tested with VBand) - let me know if it doesn't.<br/><br/>If the sound is too clickety in your device, try 'Hard' tone</div>
         <div class="credit" id="credit">
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.22
+            version 1.23
         </div>
     </div>
 
@@ -401,27 +401,6 @@
             </div>
         </div>
 
-        
-        <div class="control-group">
-            <label>Vol:</label>
-            <div class="slider-container">
-                <div class="slider" id="vol-slider">
-                    <div class="slider-thumb"></div>
-                </div>
-                <div class="slider-value" id="vol-value">15</div>
-            </div>
-        </div>
-        
-        <div class="control-group">
-            <label>Tone:</label>
-            <div class="slider-container">
-                <div class="slider" id="tone-slider">
-                    <div class="slider-thumb"></div>
-                </div>
-                <div class="slider-value" id="tone-value">700</div>
-            </div>
-        </div>
-
         <div class="control-group">
             <label>WPM:</label>
             <div class="slider-container">
@@ -440,6 +419,35 @@
             <button id="show-table-btn" class="show-table-btn">Table</button>
         </div>
 
+        
+        <div class="control-group">
+            <label>Tone:</label>
+            <div class="tone-buttons">
+                <button class="tone-btn" data-mode="triangle">Soft</button>
+                <button class="tone-btn" data-mode="sawtooth">Hard</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Freq:</label>
+            <div class="slider-container">
+                <div class="slider" id="tone-slider">
+                    <div class="slider-thumb"></div>
+                </div>
+                <div class="slider-value" id="tone-value">700</div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Vol:</label>
+            <div class="slider-container">
+                <div class="slider" id="vol-slider">
+                    <div class="slider-thumb"></div>
+                </div>
+                <div class="slider-value" id="vol-value">15</div>
+            </div>
+        </div>
+        
     </div>
     
     <div class="output" id="output"></div>
@@ -552,6 +560,7 @@
                     console.log('Loaded settings:', parsed); // Debug line
                     return {
                         mode: parsed.mode || 'iambic-a',
+                        toneType: parsed.toneType || 'triangle',
                         wpm: parsed.wpm || 15,
                         vol: parsed.vol || 40,
                         tone: parsed.tone || 700,
@@ -565,6 +574,7 @@
             console.log('Using default settings'); // Debug line
             return {
                 mode: 'iambic-a',
+                toneType: 'triangle',
                 wpm: 15,
                 vol: 40,
                 tone: 700,
@@ -605,6 +615,7 @@
         let masterOscillator = null;
         let masterGain = null;
         let isPlaying = false;
+        let currentToneType = settings.toneType;
 
         function initAudio() {
             if (audioInitialized) return;
@@ -621,7 +632,7 @@
                 masterOscillator = audioContext.createOscillator();
                 masterGain = audioContext.createGain();
                 
-                masterOscillator.type = "triangle";
+                masterOscillator.type = settings.toneType;
                 masterOscillator.frequency.setValueAtTime(settings.tone, audioContext.currentTime);
                 masterGain.gain.setValueAtTime(0, audioContext.currentTime); // Start silent
                 
@@ -645,6 +656,11 @@
             }
             
             const now = audioContext.currentTime;
+            // Update oscillator type only if tone type changed
+            if (settings.toneType !== currentToneType) {
+                masterOscillator.type = settings.toneType;
+                currentToneType = settings.toneType;
+            }
             
             // Update frequency if needed
             masterOscillator.frequency.setValueAtTime(settings.tone, now);
@@ -652,7 +668,11 @@
             // Fade in quickly to avoid clicks
             masterGain.gain.cancelScheduledValues(now);
             masterGain.gain.setValueAtTime(masterGain.gain.value, now);
-            masterGain.gain.linearRampToValueAtTime(settings.vol / 100, now + 0.01);
+            let volDivider = 100;
+            if (settings.toneType === 'sawtooth') {
+                volDivider = 250;
+            }
+            masterGain.gain.linearRampToValueAtTime(settings.vol / volDivider, now + 0.01);
             
             isPlaying = true;
             
@@ -1090,6 +1110,28 @@
             // Set initial active state separately, after all event listeners are set
             polarityButtons.forEach(btn => {
                 if (btn.dataset.polarity === settings.polarity) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Add tone button setup
+            const toneButtons = document.querySelectorAll('.tone-btn');
+            toneButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toneButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    settings.toneType = btn.dataset.mode;
+                    saveSettings();
+                });
+                
+                if (btn.dataset.mode === settings.toneType) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Set initial active state for tone buttons (add this after the event listeners)
+            toneButtons.forEach(btn => {
+                if (btn.dataset.mode === settings.toneType) {
                     btn.classList.add('active');
                 }
             });
