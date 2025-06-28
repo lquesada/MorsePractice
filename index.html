@@ -280,8 +280,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 52px;
-            height: 52px;
+            width: 58px;
+            height: 58px;
             background: #333;
             border: 1px solid #555;
             border-radius: 4px;
@@ -427,7 +427,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.27
+            version 1.28
         </div>
     </div>
 
@@ -483,7 +483,7 @@
         </div>
 
         <div class="control-group">
-            <button id="btn" class="btn">Table</button>
+            <button id="btn" class="btn">Show Table</button>
         </div>
 
         <div class="control-group">
@@ -552,11 +552,39 @@
                 <div class="morse-item"><div class="morse-char">@</div><div class="morse-code">.--.-.</div></div>
                 <div class="morse-item"><div class="morse-char">'</div><div class="morse-code">.----.</div></div>
                 <div class="morse-item"><div class="morse-char">-</div><div class="morse-code">-....-</div></div>
-                <div class="morse-item"><div class="morse-char">,</div><div class="morse-code">--.-..</div></div>
+                <div class="morse-item"><div class="morse-char">,</div><div class="morse-code">--..--</div></div>
                 <div class="morse-item"><div class="morse-char">"</div><div class="morse-code">.-..-.</div></div>
                 <div class="morse-item"><div class="morse-char">+</div><div class="morse-code">.-.-.</div></div>
                 <div class="morse-item"><div class="morse-char">(</div><div class="morse-code">-.--.</div></div>
                 <div class="morse-item"><div class="morse-char">)</div><div class="morse-code">-.--.-</div></div>
+                <div class="morse-item"><div class="morse-char">Ñ</div><div class="morse-code">--.--</div></div>
+                <div class="morse-item"><div class="morse-char">Ç</div><div class="morse-code">-.-..</div></div>
+                <div class="morse-item"><div class="morse-char">ß</div><div class="morse-code">...--..</div></div>
+            </div>
+
+            <div class="morse-section">
+                <div class="section-title">COMMON PROCEDURAL SIGNALS</div>
+                <div class="morse-item"><div class="morse-char">&lt;AR&gt;</div><div class="morse-code">.-.-.</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;AS&gt;</div><div class="morse-code">.-...</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;BK&gt;</div><div class="morse-code">-...-.-</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;BT&gt;</div><div class="morse-code">-...-</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;HH&gt;</div><div class="morse-code">........</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;KN&gt;</div><div class="morse-code">-.--.</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;SK&gt;</div><div class="morse-code">...-.-</div></div>
+            </div>
+
+            <div class="morse-section">
+                <div class="section-title">OTHER PROCEDURAL SIGNALS</div>
+                <div class="morse-item"><div class="morse-char">&lt;CL&gt;</div><div class="morse-code">-.-..-..</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;CT&gt;</div><div class="morse-code">-.-.-</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;DO&gt;</div><div class="morse-code">-..---</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;FN&gt;</div><div class="morse-code">..-.-.</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;INT&gt;</div><div class="morse-code">..-.-</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;KA&gt;</div><div class="morse-code">-.-.-</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;NJ&gt;</div><div class="morse-code">-..---</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;SN&gt;</div><div class="morse-code">...-.</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;SOS&gt;</div><div class="morse-code">...---...</div></div>
+                <div class="morse-item"><div class="morse-char">&lt;VE&gt;</div><div class="morse-code">...-.</div></div>
             </div>
         </div>
     </div>
@@ -580,10 +608,24 @@
 
             '?': '..--..', '!': '-.-.--', '.': '.-.-.-', ':': '---...', ';': '-.-.-.',
             '=': '-...-', '/': '-..-.', '@': '.--.-.', "'": '.----.', '-': '-....-',
-            ',': '--..--', '"': '.-..-.', '+': '.-.-.', '(': '-.--.', ')': '-.--.-',
+            ',': '--..--', '"': '.-..-.', '(': '-.--.', ')': '-.--.-', 'Ñ': '--.--', 'Ç': '-.-..', 'ß': '...--..',
 
-            '<AR>': '.-.-.', '<AS>': '.-...', '<HH>': '........', '<SK>': '...-.-',
-            //'<KN>': '-.--.',  same as '('
+            '<AR/+>': '.-.-.',
+            '<AS>': '.-...',
+            '<BK>': '-...-.-',
+            '<BT>': '-...-',
+            '<HH>': '........',
+            '<KN/(>': '-.--.',
+            '<SK>': '...-.-', 
+            
+            '<CL>': '-.-..-..', 
+            '<DO/NJ>': '-..---', 
+            '<FN>': '..-.-.', 
+            '<INT>': '..-.-', 
+            '<KA/CT>': '-.-.-',
+            '<NJ>': '-..---', 
+            '<SN/VE>': '...-.', 
+            '<SOS>': '...---...', 
             
             ' ': ' '
         };
