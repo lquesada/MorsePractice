@@ -341,6 +341,22 @@
             background: #007acc !important;
         }
 
+        .tooltip-popup {
+            position: absolute;
+            background: #222;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            z-index: 9999;
+            max-width: 200px;
+            white-space: normal;
+            word-break: break-word;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
         .openline {
             display: block;
             font-size: 50px;
@@ -427,7 +443,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.28
+            version 1.29
         </div>
     </div>
 
@@ -557,6 +573,10 @@
                 <div class="morse-item"><div class="morse-char">+</div><div class="morse-code">.-.-.</div></div>
                 <div class="morse-item"><div class="morse-char">(</div><div class="morse-code">-.--.</div></div>
                 <div class="morse-item"><div class="morse-char">)</div><div class="morse-code">-.--.-</div></div>
+            </div>
+            
+            <div class="morse-section">
+                <div class="section-title">SPECIAL LETTERS</div>
                 <div class="morse-item"><div class="morse-char">Ñ</div><div class="morse-code">--.--</div></div>
                 <div class="morse-item"><div class="morse-char">Ç</div><div class="morse-code">-.-..</div></div>
                 <div class="morse-item"><div class="morse-char">ß</div><div class="morse-code">...--..</div></div>
@@ -564,29 +584,448 @@
 
             <div class="morse-section">
                 <div class="section-title">COMMON PROCEDURAL SIGNALS</div>
-                <div class="morse-item"><div class="morse-char">&lt;AR&gt;</div><div class="morse-code">.-.-.</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;AS&gt;</div><div class="morse-code">.-...</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;BK&gt;</div><div class="morse-code">-...-.-</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;BT&gt;</div><div class="morse-code">-...-</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;HH&gt;</div><div class="morse-code">........</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;KN&gt;</div><div class="morse-code">-.--.</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;SK&gt;</div><div class="morse-code">...-.-</div></div>
+            
+                <div class="morse-item" data-description="OUT &mdash; End of message. Commonly used to mark the conclusion of a transmission.">
+                    <div class="morse-char">&lt;AR&gt;</div>
+                    <div class="morse-code">.-.-.</div>
+                </div>
+            
+                <div class="morse-item" data-description="WAIT &mdash; Wait or stand by. Used to request the other station to pause.">
+                    <div class="morse-char">&lt;AS&gt;</div>
+                    <div class="morse-code">.-...</div>
+                </div>
+            
+                <div class="morse-item" data-description="BREAK-IN &mdash; Break. Indicates a pause in the transmission or switches between speakers.">
+                    <div class="morse-char">&lt;BK&gt;</div>
+                    <div class="morse-code">-...-.-</div>
+                </div>
+            
+                <div class="morse-item" data-description="BREAK &mdash; Paragraph break. Used to separate parts of a message.">
+                    <div class="morse-char">&lt;BT&gt;</div>
+                    <div class="morse-code">-...-</div>
+                </div>
+            
+                <div class="morse-item" data-description="ERROR &mdash; Error or correction. Used to indicate a mistake was made.">
+                    <div class="morse-char">&lt;HH&gt;</div>
+                    <div class="morse-code">........</div>
+                </div>
+            
+                <div class="morse-item" data-description="GO AHEAD &mdash; Invitation to transmit, used in directed communication.">
+                    <div class="morse-char">&lt;KN&gt;</div>
+                    <div class="morse-code">-.--.</div>
+                </div>
+            
+                <div class="morse-item" data-description="END CONTACT &mdash; End of contact. Often used as a polite sign-off.">
+                    <div class="morse-char">&lt;SK&gt;</div>
+                    <div class="morse-code">...-.-</div>
+                </div>
+
+                <div class="morse-item" data-description="DISTRESS &mdash; Emergency signal (international).">
+                    <div class="morse-char">&lt;SOS&gt;</div>
+                    <div class="morse-code">...---...</div>
+                </div>
             </div>
 
             <div class="morse-section">
-                <div class="section-title">OTHER PROCEDURAL SIGNALS</div>
-                <div class="morse-item"><div class="morse-char">&lt;CL&gt;</div><div class="morse-code">-.-..-..</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;CT&gt;</div><div class="morse-code">-.-.-</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;DO&gt;</div><div class="morse-code">-..---</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;FN&gt;</div><div class="morse-code">..-.-.</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;INT&gt;</div><div class="morse-code">..-.-</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;KA&gt;</div><div class="morse-code">-.-.-</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;NJ&gt;</div><div class="morse-code">-..---</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;SN&gt;</div><div class="morse-code">...-.</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;SOS&gt;</div><div class="morse-code">...---...</div></div>
-                <div class="morse-item"><div class="morse-char">&lt;VE&gt;</div><div class="morse-code">...-.</div></div>
+                <div class="section-title">COMMON ABBREVIATIONS</div>
+            
+                <div class="morse-item" data-description="BEST REGARDS — Friendly sign-off.">
+                    <div class="morse-char">73</div>
+                </div>
+            
+                <div class="morse-item" data-description="YES / CORRECT — Affirmative response.">
+                    <div class="morse-char">C</div>
+                </div>
+            
+                <div class="morse-item" data-description="NO / NEGATIVE — Negative response.">
+                    <div class="morse-char">N</div>
+                </div>
+            
+                <div class="morse-item" data-description="OVER — Invitation to respond.">
+                    <div class="morse-char">K</div>
+                </div>
+            
+                <div class="morse-item" data-description="ROGER — Message received.">
+                    <div class="morse-char">R</div>
+                </div>
+            
+                <div class="morse-item" data-description="SAY AGAIN — Request for repetition.">
+                    <div class="morse-char">?</div>
+                </div>
+            
+                <div class="morse-item" data-description="ALL AFTER — Resend everything after [word].">
+                    <div class="morse-char">AA</div>
+                </div>
+            
+                <div class="morse-item" data-description="ALL BEFORE — Resend everything before [word].">
+                    <div class="morse-char">AB</div>
+                </div>
+            
+                <div class="morse-item" data-description="AGAIN — Repeat.">
+                    <div class="morse-char">ANG</div>
+                </div>
+            
+                <div class="morse-item" data-description="ANTENNA — Aerial equipment.">
+                    <div class="morse-char">ANT</div>
+                </div>
+            
+                <div class="morse-item" data-description="BETWEEN — Information between two points.">
+                    <div class="morse-char">BN</div>
+                </div>
+            
+                <div class="morse-item" data-description="CALLSIGN QUERY — Request for callsign.">
+                    <div class="morse-char">CS ?</div>
+                </div>
+            
+                <div class="morse-item" data-description="CALLSIGN FOLLOWS — Identifying station is next.">
+                    <div class="morse-char">CS _</div>
+                </div>
+            
+                <div class="morse-item" data-description="CLOSING DOWN — Ending transmission.">
+                    <div class="morse-char">CL</div>
+                </div>
+            
+                <div class="morse-item" data-description="CONFIRM — Request for confirmation or acknowledgment.">
+                    <div class="morse-char">CFM ?</div>
+                </div>
+            
+                <div class="morse-item" data-description="CONFIRM — Confirmation of receipt or understanding.">
+                    <div class="morse-char">CFM _</div>
+                </div>
+            
+                <div class="morse-item" data-description="CLOSE PROXIMITY — Short distance.">
+                    <div class="morse-char">CP</div>
+                </div>
+            
+                <div class="morse-item" data-description="CALLING ALL STATIONS — General call.">
+                    <div class="morse-char">CQ</div>
+                </div>
+            
+                <div class="morse-item" data-description="DISTANCE — Long-distance communication.">
+                    <div class="morse-char">DX</div>
+                </div>
+            
+                <div class="morse-item" data-description="FOR — Indicates purpose or intention.">
+                    <div class="morse-char">FER</div>
+                </div>
+            
+                <div class="morse-item" data-description="GOOD AFTERNOON — Greeting.">
+                    <div class="morse-char">GA</div>
+                </div>
+            
+                <div class="morse-item" data-description="GOOD BYE — Farewell.">
+                    <div class="morse-char">GB</div>
+                </div>
+            
+                <div class="morse-item" data-description="GOOD EVENING — Greeting.">
+                    <div class="morse-char">GE</div>
+                </div>
+            
+                <div class="morse-item" data-description="GOOD LUCK — Best wishes.">
+                    <div class="morse-char">GL</div>
+                </div>
+            
+                <div class="morse-item" data-description="GOOD MORNING — Greeting.">
+                    <div class="morse-char">GM</div>
+                </div>
+            
+                <div class="morse-item" data-description="GOOD — Positive acknowledgement.">
+                    <div class="morse-char">GUD</div>
+                </div>
+            
+                <div class="morse-item" data-description="HERE — Current location.">
+                    <div class="morse-char">HR</div>
+                </div>
+            
+                <div class="morse-item" data-description="NOTHING TO FOLLOW — No further traffic.">
+                    <div class="morse-char">NIL</div>
+                </div>
+            
+                <div class="morse-item" data-description="OLD MAN — Friendly term for a male operator.">
+                    <div class="morse-char">OM</div>
+                </div>
+            
+                <div class="morse-item" data-description="OPERATOR — The person operating the station.">
+                    <div class="morse-char">OP</div>
+                </div>
+            
+                <div class="morse-item" data-description="PLEASE — Polite request.">
+                    <div class="morse-char">PSE</div>
+                </div>
+            
+                <div class="morse-item" data-description="RECEIVER — Receiving equipment.">
+                    <div class="morse-char">RX</div>
+                </div>
+            
+                <div class="morse-item" data-description="REPEAT — Request to repeat.">
+                    <div class="morse-char">RPT</div>
+                </div>
+            
+                <div class="morse-item" data-description="RADIO EQUIPMENT — Transmitter and receiver gear.">
+                    <div class="morse-char">RIG</div>
+                </div>
+            
+                <div class="morse-item" data-description="SIGNAL REPORT — RST format (Readability, Strength, Tone).">
+                    <div class="morse-char">RST</div>
+                </div>
+            
+                <div class="morse-item" data-description="THANK YOU — Expression of gratitude.">
+                    <div class="morse-char">TU</div>
+                </div>
+            
+                <div class="morse-item" data-description="THANKS — Informal thanks.">
+                    <div class="morse-char">TNX</div>
+                </div>
+            
+                <div class="morse-item" data-description="TRANSMITTER — Sending equipment.">
+                    <div class="morse-char">TX</div>
+                </div>
+            
+                <div class="morse-item" data-description="YOUR — Belonging to you.">
+                    <div class="morse-char">UR</div>
+                </div>
+            
+                <div class="morse-item" data-description="WEATHER IS — Weather information follows.">
+                    <div class="morse-char">WX</div>
+                </div>
+            
+                <div class="morse-item" data-description="WORK ALL — Communicate with all stations.">
+                    <div class="morse-char">WA</div>
+                </div>
+            
+                <div class="morse-item" data-description="WORK BOTH — Communicate with both stations.">
+                    <div class="morse-char">WB</div>
+                </div>
+            
+                <div class="morse-item" data-description="WRONG — Your last transmission was wrong. The correct version is.">
+                    <div class="morse-char">ZWF</div>
+                </div>
+            
+                <div class="morse-item" data-description="LOVE AND KISSES — Affectionate sign-off (often from/to YLs).">
+                    <div class="morse-char">88</div>
+                </div>
+            
+                <div class="morse-item" data-description="GO TO HELL — Humorous/sarcastic sign-off.">
+                    <div class="morse-char">99</div>
+                </div>
             </div>
-        </div>
+            
+            <div class="morse-section">
+                <div class="section-title">Q CODES</div>
+            
+                <div class="morse-item" data-description="What is the name of your station?">
+                    <div class="morse-char">QRA ?</div>
+                </div>
+                <div class="morse-item" data-description="The name of my station is...">
+                    <div class="morse-char">QRA _</div>
+                </div>
+            
+                <div class="morse-item" data-description="How far are you from my station?">
+                    <div class="morse-char">QRB ?</div>
+                </div>
+                <div class="morse-item" data-description="The distance between our stations is... km.">
+                    <div class="morse-char">QRB _</div>
+                </div>
+            
+                <div class="morse-item" data-description="What is your bearing from me?">
+                    <div class="morse-char">QRC ?</div>
+                </div>
+                <div class="morse-item" data-description="Your bearing from me is... degrees.">
+                    <div class="morse-char">QRC _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Is my frequency correct?">
+                    <div class="morse-char">QRG ?</div>
+                </div>
+                <div class="morse-item" data-description="Your frequency is...">
+                    <div class="morse-char">QRG _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Does my frequency vary?">
+                    <div class="morse-char">QRH ?</div>
+                </div>
+                <div class="morse-item" data-description="Your frequency varies.">
+                    <div class="morse-char">QRH _</div>
+                </div>
+            
+                <div class="morse-item" data-description="How is the tone of my transmission?">
+                    <div class="morse-char">QRI ?</div>
+                </div>
+                <div class="morse-item" data-description="The tone of your transmission is... (1–3).">
+                    <div class="morse-char">QRI _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Are you receiving me badly?">
+                    <div class="morse-char">QRJ ?</div>
+                </div>
+                <div class="morse-item" data-description="I am receiving you badly.">
+                    <div class="morse-char">QRJ _</div>
+                </div>
+            
+                <div class="morse-item" data-description="What is my signal readability?">
+                    <div class="morse-char">QRK ?</div>
+                </div>
+                <div class="morse-item" data-description="Your signal readability is... (1–5).">
+                    <div class="morse-char">QRK _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Are you busy?">
+                    <div class="morse-char">QRL ?</div>
+                </div>
+                <div class="morse-item" data-description="I am busy.">
+                    <div class="morse-char">QRL _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Are you being interfered with?">
+                    <div class="morse-char">QRM ?</div>
+                </div>
+                <div class="morse-item" data-description="I am being interfered with.">
+                    <div class="morse-char">QRM _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Are you troubled by static?">
+                    <div class="morse-char">QRN ?</div>
+                </div>
+                <div class="morse-item" data-description="I am troubled by static.">
+                    <div class="morse-char">QRN _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Shall I increase power?">
+                    <div class="morse-char">QRO ?</div>
+                </div>
+                <div class="morse-item" data-description="Increase power.">
+                    <div class="morse-char">QRO _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Shall I decrease power?">
+                    <div class="morse-char">QRP ?</div>
+                </div>
+                <div class="morse-item" data-description="Decrease power.">
+                    <div class="morse-char">QRP _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Shall I call you again?">
+                    <div class="morse-char">QRQ ?</div>
+                </div>
+                <div class="morse-item" data-description="Call me again.">
+                    <div class="morse-char">QRQ _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Shall I send more slowly?">
+                    <div class="morse-char">QRS ?</div>
+                </div>
+                <div class="morse-item" data-description="Send more slowly.">
+                    <div class="morse-char">QRS _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Shall I stop sending?">
+                    <div class="morse-char">QRT ?</div>
+                </div>
+                <div class="morse-item" data-description="I am stopping transmission.">
+                    <div class="morse-char">QRT _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Shall I stand by?">
+                    <div class="morse-char">QRU ?</div>
+                </div>
+                <div class="morse-item" data-description="I have nothing more to send.">
+                    <div class="morse-char">QRU _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Are you ready?">
+                    <div class="morse-char">QRV ?</div>
+                </div>
+                <div class="morse-item" data-description="I am ready.">
+                    <div class="morse-char">QRV _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Shall I wait?">
+                    <div class="morse-char">QRX ?</div>
+                </div>
+                <div class="morse-item" data-description="Wait.">
+                    <div class="morse-char">QRX _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Are you troubled by my transmission?">
+                    <div class="morse-char">QRY ?</div>
+                </div>
+                <div class="morse-item" data-description="You are causing interference.">
+                    <div class="morse-char">QRY _</div>
+                </div>
+            
+                <div class="morse-item" data-description="What is your location?">
+                    <div class="morse-char">QTH ?</div>
+                </div>
+                <div class="morse-item" data-description="My location is...">
+                    <div class="morse-char">QTH _</div>
+                </div>
+            
+                <div class="morse-item" data-description="Can you acknowledge receipt?">
+                    <div class="morse-char">QSL ?</div>
+                </div>
+                <div class="morse-item" data-description="I acknowledge receipt.">
+                    <div class="morse-char">QSL _</div>
+                </div>
+            
+                <div class="morse-item" data-description="What is the correct time?">
+                    <div class="morse-char">QTR ?</div>
+                </div>
+                <div class="morse-item" data-description="The time is...">
+                    <div class="morse-char">QTR _</div>
+                </div>
+            
+                <div class="morse-item" data-description="What is the weather like?">
+                    <div class="morse-char">QWX ?</div>
+                </div>
+                <div class="morse-item" data-description="The weather is...">
+                    <div class="morse-char">QWX _</div>
+                </div>
+            </div>
+            
+            <div class="morse-section">
+                <div class="section-title">OTHER PROCEDURAL SIGNALS</div>
+            
+                <div class="morse-item" data-description="CLOSING &mdash; Indicates the operator is leaving or going off the air.">
+                    <div class="morse-char">&lt;CL&gt;</div>
+                    <div class="morse-code">-.-..-..</div>
+                </div>
+            
+                <div class="morse-item" data-description="ATTENTION &mdash; Start of message or alert.">
+                    <div class="morse-char">&lt;CT&gt;</div>
+                    <div class="morse-code">-.-.-</div>
+                </div>
+            
+                <div class="morse-item" data-description="RESUME &mdash; Resume transmission after a break.">
+                    <div class="morse-char">&lt;DO&gt;</div>
+                    <div class="morse-code">-..---</div>
+                </div>
+            
+                <div class="morse-item" data-description="INTERROGATE &mdash; What is your intention? Request for clarification.">
+                    <div class="morse-char">&lt;INT&gt;</div>
+                    <div class="morse-code">..-.-</div>
+                </div>
+            
+                <div class="morse-item" data-description="START MESSAGE &mdash; Often used to precede formal traffic.">
+                    <div class="morse-char">&lt;KA&gt;</div>
+                    <div class="morse-code">-.-.-</div>
+                </div>
+            
+                <div class="morse-item" data-description="ROGER &mdash; Message received or understood.">
+                    <div class="morse-char">&lt;SN&gt;</div>
+                    <div class="morse-code">...-.</div>
+                </div>
+            
+                <div class="morse-item" data-description="DISTRESS RELAY &mdash; Start of a distress signal relayed from another station.">
+                    <div class="morse-char">&lt;DDD&gt;</div>
+                    <div class="morse-code">-..-..-..</div>
+                </div>
+            
+                <div class="morse-item" data-description="ROGER &mdash; Confirmation or receipt of message.">
+                    <div class="morse-char">&lt;VE&gt;</div>
+                    <div class="morse-code">...-.</div>
+                </div>
+            </div>
+         </div>
     </div>
     
     <div class="buttons" id="buttons">
@@ -619,12 +1058,12 @@
             '<SK>': '...-.-', 
             
             '<CL>': '-.-..-..', 
-            '<DO/NJ>': '-..---', 
-            '<FN>': '..-.-.', 
+            '<DO>': '-..---', 
             '<INT>': '..-.-', 
             '<KA/CT>': '-.-.-',
             '<NJ>': '-..---', 
             '<SN/VE>': '...-.', 
+            '<DDD>': '-..-..-..', 
             '<SOS>': '...---...', 
             
             ' ': ' '
@@ -1480,6 +1919,58 @@
             updateStrictButton();
         }
 
+        function setupMorseTooltips() {
+            let activeTooltip = null;
+            let tooltipTimeout = null;
+            let activeTarget = null;
+
+            document.querySelectorAll('.morse-item[data-description]').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    // If clicking the same item again, toggle it off
+                    if (activeTooltip && activeTarget === item) {
+                        activeTooltip.remove();
+                        clearTimeout(tooltipTimeout);
+                        activeTooltip = null;
+                        activeTarget = null;
+                        return;
+                    }
+
+                    // If another tooltip is showing, remove it
+                    if (activeTooltip) {
+                        activeTooltip.remove();
+                        clearTimeout(tooltipTimeout);
+                    }
+
+                    const desc = item.getAttribute('data-description');
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'tooltip-popup';
+                    tooltip.textContent = desc;
+                    document.body.appendChild(tooltip);
+
+                    const rect = item.getBoundingClientRect();
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    let top = rect.top - tooltipRect.height - 6;
+                    let left = rect.left + (rect.width - tooltipRect.width) / 2;
+
+                    // Ensure it fits within screen bounds
+                    top = Math.max(6, top);
+                    left = Math.max(6, Math.min(left, window.innerWidth - tooltipRect.width - 6));
+
+                    tooltip.style.top = `${top + window.scrollY}px`;
+                    tooltip.style.left = `${left + window.scrollX}px`;
+
+                    activeTooltip = tooltip;
+                    activeTarget = item;
+
+                    tooltipTimeout = setTimeout(() => {
+                        tooltip.remove();
+                        activeTooltip = null;
+                        activeTarget = null;
+                    }, 2000);
+                });
+            });
+        }
+
         let overlayActive = true;
 
         function init() {
@@ -1584,6 +2075,7 @@
             setupStrictToggle();
             setupTableToggle();
             setupEventListeners();
+            setupMorseTooltips();
         }
 
         // Start the application
