@@ -1628,6 +1628,16 @@
                     btn.classList.add('active');
                     settings.mode = btn.dataset.mode;
                     saveSettings();
+                    const inverseBtn = document.getElementById('inverse-btn');
+                    if (settings.mode === 'straight') {
+                        inverseBtn.disabled = true;
+                        inverseBtn.style.opacity = '0.4';
+                        inverseBtn.style.pointerEvents = 'none';
+                    } else {
+                        inverseBtn.disabled = false;
+                        inverseBtn.style.opacity = '';
+                        inverseBtn.style.pointerEvents = '';
+                    }
                     
                     // Update button layout
                     if (settings.mode === 'straight') {
