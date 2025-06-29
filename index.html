@@ -1288,7 +1288,10 @@
                     // After processing letter, set up word timeout
                     morseState.wordTimeout = setTimeout(() => {
                         if (!morseState.isTransmitting && !morseState.currentCode) {
-                            outputText(' ');
+                            const output = document.getElementById('output');
+                            if (output.textContent.length > 0) {  // Only add space if output is not empty
+                                outputText(' ');
+                            }
                         }
                     }, timings.wordGap - timings.letterGap);
                 }
