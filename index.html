@@ -359,7 +359,7 @@
 
         .openline {
             display: block;
-            font-size: 50px;
+            font-size: 48px;
             color: #ddaa55;
             padding: 10px;
         }
@@ -375,7 +375,7 @@
 
         .credit {
             display: block;
-            padding: 20px;
+            padding: 16px;
             font-size: 16px;
         }
 
@@ -438,12 +438,12 @@
     <div id="start-overlay">
         <div class="openline">Morse Practice</div>
         <div class="openline">[Click to Start]</div>
-        <div class="instructions">Supported inputs: keyboard, touch screen, mouse, or a paddle with usb adapter.<br/><br/>For mouse left/right-click keying or USB-to-mouse paddle adapter, leave the mouse pointer above the left app button, left/right click or paddle will work.<br/><br/>For an USB-to-keyboard paddle adapter it works out of the box (e.g. tested with VBand) - let me know if it doesn't.<br/><br/>Common issues: If the sound is too clickety in your device, try the 'No-click' option. If latency is too high, try another browser (e.g. Firefox).</div>
+        <div class="instructions">Supported inputs: keyboard, touch screen, mouse, or a paddle with usb adapter.<br/><br/>For mouse left/right-click keying or USB-to-mouse paddle adapter, leave the mouse pointer above the left app button, left/right click or paddle will work.<br/><br/>For an USB-to-keyboard paddle adapter it works out of the box (e.g. tested with VBand) - let me know if it doesn't.<br/><br/>Strict mode requires the proper timing between letters, non-strict mode allows faster manipulation.<br/><br/>Common issues: If the sound is too clickety in your device, try the 'No-click' option. If latency is too high, try another browser (e.g. Firefox).</div>
         <div class="credit" id="credit">
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.30
+            version 1.31
         </div>
     </div>
 
@@ -1151,12 +1151,7 @@
             audioInitialized = true;
 
             try {
-                const contextOptions = {
-                    latencyHint: 'interactive',
-                    sampleRate: 44100 // explicit sample rate
-                };
-            
-                audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 audioReady = true;
             } catch (e) {
                 console.error("Audio init failed:", e);
@@ -1495,59 +1490,53 @@
             const volSlider = document.getElementById('vol-slider');
             const volThumb = volSlider.querySelector('.slider-thumb');
             const volValue = document.getElementById('vol-value');
-            
+
             const toneSlider = document.getElementById('tone-slider');
             const toneThumb = toneSlider.querySelector('.slider-thumb');
             const toneValue = document.getElementById('tone-value');
-            
-            function updateSlider(slider, thumb, value, min, max, current, callback) {
+
+            function updateSlider(slider, thumb, valueDisplay, min, max, current, callback) {
                 const percent = (current - min) / (max - min);
                 thumb.style.left = (percent * 80) + 'px';
-                value.textContent = current;
-                
+                valueDisplay.textContent = current;
+
                 let isDragging = false;
-                
+
                 function handleMove(clientX) {
                     const rect = slider.getBoundingClientRect();
                     const x = clientX - rect.left;
                     const percent = Math.max(0, Math.min(1, x / rect.width));
                     const newValue = Math.round(min + percent * (max - min));
-                    
+
                     thumb.style.left = (percent * 80) + 'px';
-                    value.textContent = newValue;
+                    valueDisplay.textContent = newValue;
                     callback(newValue);
                 }
-                
-                slider.addEventListener('mousedown', (e) => {
+
+                slider.addEventListener('pointerdown', (e) => {
                     isDragging = true;
+                    slider.setPointerCapture(e.pointerId);
                     handleMove(e.clientX);
                 });
-                
-                slider.addEventListener('touchstart', (e) => {
-                    isDragging = true;
-                    handleMove(e.touches[0].clientX);
-                });
-                
-                document.addEventListener('mousemove', (e) => {
+
+                slider.addEventListener('pointermove', (e) => {
                     if (isDragging) handleMove(e.clientX);
                 });
-                
-                document.addEventListener('touchmove', (e) => {
-                    if (isDragging) {
-                        e.preventDefault();
-                        handleMove(e.touches[0].clientX);
-                    }
+
+                slider.addEventListener('pointerup', () => {
+                    isDragging = false;
                 });
-                
-                document.addEventListener('mouseup', () => isDragging = false);
-                document.addEventListener('touchend', () => isDragging = false);
+
+                slider.addEventListener('pointercancel', () => {
+                    isDragging = false;
+                });
             }
-            
+
             updateSlider(volSlider, volThumb, volValue, 0, 100, settings.vol, (value) => {
                 settings.vol = value;
                 saveSettings();
             });
-            
+
             updateSlider(toneSlider, toneThumb, toneValue, 400, 1200, settings.tone, (value) => {
                 settings.tone = value;
                 if (oscillator) {
@@ -1628,7 +1617,13 @@
             rightPaddle.ondragstart = () => false;
             
             modeButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
+                handle = () => {
+                    if (
+                        ((settings.mode === 'iambic-a' || settings.mode === 'iambic-b') && btn.dataset.mode === 'straight') ||
+                        ((btn.dataset.mode === 'iambic-a' || btn.dataset.mode === 'iambic-b') && settings.mode === 'straight')) {
+                        handlePaddlePress('left', false);
+                        handlePaddlePress('right', false);
+                    }
                     modeButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     settings.mode = btn.dataset.mode;
@@ -1647,7 +1642,9 @@
                         leftPaddle.textContent = 'tap / click / [ / A / ← / ,';
                         rightPaddle.textContent = 'tap / click / ] / D / → / .';
                     }
-                });
+                }
+                btn.addEventListener('click', handle);
+                btn.addEventListener('touchstart', handle);
                 
                 if (btn.dataset.mode === settings.mode) {
                     btn.click();
@@ -1671,11 +1668,13 @@
                 }
             }
             
-            tableBtn.addEventListener('click', () => {
+            handle = () => {
                 settings.showTable = !settings.showTable;
                 saveSettings();
                 updateTableDisplay();
-            });
+            }
+            tableBtn.addEventListener('click', handle);
+            tableBtn.addEventListener('touchstart', handle);
             
             // Set initial state
             updateTableDisplay();
@@ -1866,13 +1865,17 @@
         function setupInverseToggle() {
             // Setup inverse button
             const inverseBtn = document.getElementById('inverse-btn');
-            inverseBtn.addEventListener('click', () => {
+            handle = () => {
                 settings.polarity = settings.polarity === 'normal' ? 'inverse' : 'normal';
                 saveSettings();
                 updateInverseButton();
-            });
+            }
+            inverseBtn.addEventListener('click', handle);
+            inverseBtn.addEventListener('touchstart', handle);
 
             function updateInverseButton() {
+                handlePaddlePress('left', false);
+                handlePaddlePress('right', false);
                 if (settings.polarity === 'inverse') {
                     inverseBtn.classList.add('active');
                 } else {
@@ -1887,11 +1890,13 @@
         function setupToneToggle() {
             const toneBtn = document.getElementById('tone-btn');
             
-            toneBtn.addEventListener('click', () => {
+            handle = () => {
                 settings.toneType = settings.toneType === 'triangle' ? 'sawtooth' : 'triangle';
                 saveSettings();
                 updateToneButton();
-            });
+            }
+            toneBtn.addEventListener('click', handle);
+            toneBtn.addEventListener('touchstart', handle);
 
             function updateToneButton() {
                 if (settings.toneType === 'sawtooth') {
@@ -1908,11 +1913,13 @@
         function setupStrictToggle() {
             const strictBtn = document.getElementById('strict-btn');
             
-            strictBtn.addEventListener('click', () => {
+            handle = () => {
                 settings.strict = !settings.strict;
                 saveSettings();
                 updateStrictButton();
-            });
+            }
+            strictBtn.addEventListener('click', handle);
+            strictBtn.addEventListener('touchstart', handle);
 
             function updateStrictButton() {
                 if (settings.strict) {
@@ -1924,6 +1931,24 @@
 
             // Set initial state
             updateStrictButton();
+        }
+
+        function setupClearButton() {
+            const clearBtn = document.getElementById('clear-output-btn');
+            
+            handle = () => {
+                document.getElementById('output').textContent = '';
+                const btn = e.target;
+                btn.classList.add('active');
+                document.getElementById('output').textContent = '';
+                
+                // Remove active class after a short delay for visual feedback
+                setTimeout(() => {
+                    btn.classList.remove('active');
+                }, 100);
+            }
+            clearBtn.addEventListener('click', handle);
+            clearBtn.addEventListener('touchstart', handle);
         }
 
         function setupMorseTooltips() {
@@ -1983,17 +2008,6 @@
         function init() {
             settings = loadSettings();
 
-            document.getElementById('clear-output-btn').addEventListener('click', (e) => {
-                document.getElementById('output').textContent = '';
-                const btn = e.target;
-                btn.classList.add('active');
-                document.getElementById('output').textContent = '';
-                
-                // Remove active class after a short delay for visual feedback
-                setTimeout(() => {
-                    btn.classList.remove('active');
-                }, 100);
-            });
 
             const startOverlay = document.getElementById('start-overlay');
             
@@ -2077,6 +2091,7 @@
             setupSliders();
             setupWpmButtons();
             setupModeButtons();
+            setupClearButton();
             setupInverseToggle();
             setupToneToggle();
             setupStrictToggle();
