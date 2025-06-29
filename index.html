@@ -499,7 +499,7 @@
         </div>
 
         <div class="control-group">
-            <button id="btn" class="btn">Show Table</button>
+            <button id="table-btn" class="btn">Show Table</button>
         </div>
 
         <div class="control-group">
@@ -1617,7 +1617,7 @@
             rightPaddle.ondragstart = () => false;
             
             modeButtons.forEach(btn => {
-                handle = () => {
+                let handle = () => {
                     if (
                         ((settings.mode === 'iambic-a' || settings.mode === 'iambic-b') && btn.dataset.mode === 'straight') ||
                         ((btn.dataset.mode === 'iambic-a' || btn.dataset.mode === 'iambic-b') && settings.mode === 'straight')) {
@@ -1644,8 +1644,11 @@
                     }
                 }
                 btn.addEventListener('click', handle);
-                btn.addEventListener('touchstart', handle);
-                
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    handle();
+                }, { passive: false });
+                    
                 if (btn.dataset.mode === settings.mode) {
                     btn.click();
                 }
@@ -1654,7 +1657,7 @@
         }
 
         function setupTableToggle() {
-            const tableBtn = document.getElementById('btn');
+            const tableBtn = document.getElementById('table-btn');
             const tableContainer = document.getElementById('table-container');
             const buttonsContainer = document.getElementById('buttons');
             
@@ -1668,13 +1671,16 @@
                 }
             }
             
-            handle = () => {
+            let handle = () => {
                 settings.showTable = !settings.showTable;
                 saveSettings();
                 updateTableDisplay();
             }
             tableBtn.addEventListener('click', handle);
-            tableBtn.addEventListener('touchstart', handle);
+            tableBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handle();
+            }, { passive: false });
             
             // Set initial state
             updateTableDisplay();
@@ -1865,13 +1871,16 @@
         function setupInverseToggle() {
             // Setup inverse button
             const inverseBtn = document.getElementById('inverse-btn');
-            handle = () => {
+            let handle = () => {
                 settings.polarity = settings.polarity === 'normal' ? 'inverse' : 'normal';
                 saveSettings();
                 updateInverseButton();
             }
             inverseBtn.addEventListener('click', handle);
-            inverseBtn.addEventListener('touchstart', handle);
+            inverseBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handle();
+            }, { passive: false });
 
             function updateInverseButton() {
                 handlePaddlePress('left', false);
@@ -1890,13 +1899,16 @@
         function setupToneToggle() {
             const toneBtn = document.getElementById('tone-btn');
             
-            handle = () => {
+            let handle = () => {
                 settings.toneType = settings.toneType === 'triangle' ? 'sawtooth' : 'triangle';
                 saveSettings();
                 updateToneButton();
             }
             toneBtn.addEventListener('click', handle);
-            toneBtn.addEventListener('touchstart', handle);
+            toneBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handle();
+            }, { passive: false });
 
             function updateToneButton() {
                 if (settings.toneType === 'sawtooth') {
@@ -1913,13 +1925,16 @@
         function setupStrictToggle() {
             const strictBtn = document.getElementById('strict-btn');
             
-            handle = () => {
+            let handle = () => {
                 settings.strict = !settings.strict;
                 saveSettings();
                 updateStrictButton();
             }
             strictBtn.addEventListener('click', handle);
-            strictBtn.addEventListener('touchstart', handle);
+            strictBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handle();
+            }, { passive: false });
 
             function updateStrictButton() {
                 if (settings.strict) {
@@ -1936,7 +1951,7 @@
         function setupClearButton() {
             const clearBtn = document.getElementById('clear-output-btn');
             
-            handle = () => {
+            let handle = () => {
                 document.getElementById('output').textContent = '';
                 const btn = e.target;
                 btn.classList.add('active');
@@ -1948,7 +1963,11 @@
                 }, 100);
             }
             clearBtn.addEventListener('click', handle);
-            clearBtn.addEventListener('touchstart', handle);
+            clearBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handle();
+            }, { passive: false });
+
         }
 
         function setupMorseTooltips() {
