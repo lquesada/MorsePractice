@@ -226,6 +226,16 @@
             border-color: #007acc;
         }
 
+        #visual-btn {
+            transition: none !important;
+        }
+
+        #visual-btn.visual-flash {
+            background: #fff !important;
+            color: #000 !important;
+            transition: none !important;
+        }
+
         .table-container {
             display: none;
             max-height: 720px;
@@ -443,7 +453,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.32
+            version 1.33
         </div>
     </div>
 
@@ -496,6 +506,10 @@
                 </div>
                 <div class="slider-value" id="vol-value">15</div>
             </div>
+        </div>
+
+        <div class="control-group">
+            <button id="visual-btn" class="btn">Visual</button>
         </div>
 
         <div class="control-group">
@@ -1093,6 +1107,7 @@
                         tone: parsed.tone || 700,
                         polarity: parsed.polarity || 'normal',
                         strict: parsed.strict || false,
+                        visual: parsed.visual || false,
                         showTable: parsed.showTable || false
                     };
                 }
@@ -1108,6 +1123,7 @@
                 tone: 700,
                 polarity: 'normal',
                 strict: false,
+                visual: false,
                 showTable: false
             };
         }
@@ -1160,6 +1176,13 @@
         }
 
         function playTone(duration = null) {
+            if (settings.visual) {
+                const visualBtn = document.getElementById('visual-btn');
+                visualBtn.classList.add('visual-flash');
+            }
+
+            if (window.flashVisual) { window.flashVisual(); }
+
             if (!audioContext || !audioReady) return;
 
             const now = audioContext.currentTime;
@@ -1191,6 +1214,9 @@
         }
 
         function stopTone() {
+            const visualBtn = document.getElementById('visual-btn');
+            visualBtn.classList.remove('visual-flash');
+
             if (!audioContext || !audioReady) return;
 
             if (currentGain) {
@@ -1666,6 +1692,33 @@
 
         }
 
+        function setupVisualToggle() {
+            const visualBtn = document.getElementById('visual-btn');
+            
+            let handle = () => {
+                settings.visual = !settings.visual;
+                saveSettings();
+                updateVisualButton();
+            }
+
+            visualBtn.addEventListener('click', handle);
+            visualBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handle();
+            }, { passive: false });
+
+            function updateVisualButton() {
+                if (settings.visual) {
+                    visualBtn.classList.add('active');
+                } else {
+                    visualBtn.classList.remove('active');
+                }
+            }
+
+            // Set initial state
+            updateVisualButton();
+        }
+
         function setupTableToggle() {
             const tableBtn = document.getElementById('table-btn');
             const tableContainer = document.getElementById('table-container');
@@ -2124,6 +2177,7 @@
             setupInverseToggle();
             setupToneToggle();
             setupStrictToggle();
+            setupVisualToggle();
             setupTableToggle();
             setupEventListeners();
             setupMorseTooltips();
