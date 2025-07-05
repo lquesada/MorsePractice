@@ -1103,7 +1103,7 @@
                         mode: parsed.mode || 'iambic-a',
                         toneType: parsed.toneType || 'triangle',
                         wpm: parsed.wpm || 15,
-                        vol: parsed.vol || 40,
+                        vol: (typeof parsed.vol === 'number') ? parsed.vol : 40,
                         tone: parsed.tone || 700,
                         polarity: parsed.polarity || 'normal',
                         strict: parsed.strict || false,
