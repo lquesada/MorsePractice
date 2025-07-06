@@ -453,7 +453,7 @@
             Copyright (c) 2025, Luis Quesada (HB9IPH), <a href="https://lquesada.github.io/resume">www.luisquesada.com</a>
         </div>
         <div class="version" id="version">
-            version 1.33
+            version 1.34
         </div>
     </div>
 
@@ -1154,87 +1154,72 @@
         };
 
         // Audio
-        let audioContext;
-        let audioInitialized = false;
+        let audioContext = null;
         let audioReady = false;
         let masterOscillator = null;
         let masterGain = null;
         let isPlaying = false;
         let currentToneType = settings.toneType;
 
-        function initAudio() {
-            if (audioInitialized) return;
-            audioInitialized = true;
+        // Init once
+        let osc = null;
+        let gain = null;
 
-            try {
+        function initAudio() {
+            // Initialize audio context once
+            if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                audioReady = true;
-            } catch (e) {
-                console.error("Audio init failed:", e);
-                audioReady = false;
             }
+
+            // Stop and disconnect existing oscillator if any
+            if (osc) {
+                try {
+                    osc.stop(); // May throw if already stopped
+                } catch (e) {
+                    // Ignore if already stopped
+                }
+                osc.disconnect();
+                gain.disconnect();
+            }
+
+            // Create new oscillator and gain
+            osc = audioContext.createOscillator();
+            gain = audioContext.createGain();
+
+            osc.type = settings.toneType;
+            osc.frequency.value = settings.tone;
+            gain.gain.value = 0;
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
         }
 
-        function playTone(duration = null) {
+        function playTone() {
             if (settings.visual) {
                 const visualBtn = document.getElementById('visual-btn');
                 visualBtn.classList.add('visual-flash');
             }
 
-            if (window.flashVisual) { window.flashVisual(); }
+            if (!audioContext || !gain) return;
 
-            if (!audioContext || !audioReady) return;
-
-            const now = audioContext.currentTime;
-
-            // Create a new oscillator and gain node
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-
-            osc.type = settings.toneType;
-            osc.frequency.setValueAtTime(settings.tone, now);
             let volDivider = 100;
             if (settings.toneType === 'sawtooth') {
                 volDivider = 250;
             }
-            gain.gain.setValueAtTime(settings.vol / volDivider, now);
 
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-
-            osc.start(now);
-
-            if (duration) {
-                osc.stop(now + duration / 1000);
-            }
-
-            // Store for optional manual stopping
-            currentOscillator = osc;
-            currentGain = gain;
+            const targetGain = settings.vol / volDivider;
+            gain.gain.setTargetAtTime(targetGain, audioContext.currentTime, 0.005);
         }
 
         function stopTone() {
             const visualBtn = document.getElementById('visual-btn');
             visualBtn.classList.remove('visual-flash');
 
-            if (!audioContext || !audioReady) return;
+            if (!audioContext || !gain) return;
 
-            if (currentGain) {
-                const now = audioContext.currentTime;
-                currentGain.gain.cancelScheduledValues(now);
-                currentGain.gain.setValueAtTime(0, now);
-            }
-
-            if (currentOscillator) {
-                try {
-                    currentOscillator.stop();
-                } catch (e) {
-                    // already stopped
-                }
-                currentOscillator.disconnect();
-                currentOscillator = null;
-                currentGain = null;
-            }
+            // Ramp down very low, not zero to avoid cutoff artifacts
+            gain.gain.setTargetAtTime(0.00001, audioContext.currentTime, 0.005);
         }
 
         // Get timing values for transmission (always strict)
@@ -1281,7 +1266,7 @@
             
             // Reset the current code after processing
             morseState.currentCode = '';
-            morseState.lastElementTime = Date.now();
+            morseState.lastElementTime = performance.now();
         }
 
         // Clear existing timeouts
@@ -1300,7 +1285,7 @@
         function setupLetterWordTimeouts() {
             clearTimingTimeouts();
             const timings = getRecognitionTimings();
-            const now = Date.now();
+            const now = performance.now();
             
             // Letter timeout (shorter)
             morseState.letterTimeout = setTimeout(() => {
@@ -1321,7 +1306,7 @@
 
         // Handle element timing for straight key
         function handleStraightKey(isPressed) {
-            const now = Date.now();
+            const now = performance.now();
             const timings = getTransmissionTimings();
             
             if (isPressed) {
@@ -1490,7 +1475,7 @@
             paddleState.squeezePressedDuringElement = paddleState.squeezeCurrentlyPressed;
 
             const duration = (elementToSend === '.') ? timings.dit : timings.dah;
-            const nextElementStartTime = Date.now() + duration + timings.elementGap;
+            const nextElementStartTime = performance.now() + duration + timings.elementGap;
 
             playTone();
 
@@ -1499,7 +1484,7 @@
                 stopTone();
                 morseState.isTransmitting = false;
                 morseState.currentCode += elementToSend;
-                morseState.lastElementTime = Date.now();
+                morseState.lastElementTime = performance.now();
             }, duration);
 
             // Schedule next element to start at the correct time
@@ -1966,6 +1951,7 @@
                 settings.toneType = settings.toneType === 'triangle' ? 'sawtooth' : 'triangle';
                 saveSettings();
                 updateToneButton();
+                initAudio();
             }
             toneBtn.addEventListener('click', handle);
             toneBtn.addEventListener('touchstart', (e) => {
@@ -2095,7 +2081,7 @@
             
             function closeOverlay() {
                 overlayActive = false;
-                if (!audioInitialized) {
+                if (!audioContext) {
                     initAudio();
                 }
 
