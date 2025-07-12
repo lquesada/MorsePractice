@@ -1550,8 +1550,8 @@
 
             updateSlider(toneSlider, toneThumb, toneValue, 400, 1200, settings.tone, (value) => {
                 settings.tone = value;
-                if (oscillator) {
-                    oscillator.frequency.setValueAtTime(value, audioContext.currentTime);
+                if (osc) {
+                    osc.frequency.setValueAtTime(value, audioContext.currentTime);
                 }
                 saveSettings();
             });
